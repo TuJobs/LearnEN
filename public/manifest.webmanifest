@@ -1,0 +1,21 @@
+{
+  "name": "LearnEN — Tiếng Anh IT cho dev Việt",
+  "short_name": "LearnEN",
+  "description": "Học tiếng Anh chuyên ngành CNTT: spaced repetition, học trong ngữ cảnh code và mini-game.",
+  "lang": "vi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#161b22",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ôn tập", "url": "./#/review" },
+    { "name": "Học từ mới", "url": "./#/learn" },
+    { "name": "Vietglish Debugger", "url": "./#/bugs" }
+  ]
+}

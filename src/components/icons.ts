@@ -1,0 +1,52 @@
+import {
+  AppWindow,
+  Blocks,
+  Bot,
+  Container,
+  Database,
+  FileCode2,
+  FlaskConical,
+  GitBranch,
+  GitCommitHorizontal,
+  GitPullRequest,
+  Globe,
+  Hash,
+  Kanban,
+  BookText,
+  Mail,
+  MessageCircle,
+  OctagonAlert,
+  Presentation,
+  ShieldCheck,
+  Terminal,
+  type LucideIcon,
+} from 'lucide-react'
+import type { Ctx, TopicId } from '../types'
+
+export const TOPIC_ICON: Record<TopicId, LucideIcon> = {
+  basics: Blocks,
+  git: GitBranch,
+  web: Globe,
+  db: Database,
+  devops: Container,
+  testing: FlaskConical,
+  agile: Kanban,
+  review: GitPullRequest,
+  security: ShieldCheck,
+  ai: Bot,
+  slang: MessageCircle,
+  frontend: AppWindow,
+  email: Mail,
+}
+
+export const CTX_META: Record<Ctx, { icon: LucideIcon; label: string }> = {
+  code: { icon: FileCode2, label: 'src/app.ts' },
+  commit: { icon: GitCommitHorizontal, label: 'git commit' },
+  terminal: { icon: Terminal, label: 'terminal' },
+  error: { icon: OctagonAlert, label: 'error.log' },
+  pr: { icon: GitPullRequest, label: 'Pull request · review' },
+  chat: { icon: Hash, label: 'Slack · dev-team' },
+  meeting: { icon: Presentation, label: 'Meeting' },
+  doc: { icon: BookText, label: 'README.md' },
+  email: { icon: Mail, label: 'Inbox · Re: Project update' },
+}
