@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { WORDS } from '../data/words'
 import { Quiz } from '../components/Quiz'
 import { ExitButton, GameIntro, Kbd, ProgressBar, Summary, TopicPicker, WordCard, sayWord } from '../components/ui'
-import { useHotkeys } from '../lib/hooks'
+import { useHotkeys, useScrollTopOn } from '../lib/hooks'
 import { inTopic, type TopicFilter } from '../lib/pick'
 import { addXP, gradeCard, useProgress } from '../lib/store'
 import type { Route } from '../routes'
@@ -46,6 +46,8 @@ export function Learn({ go }: { go: (r: Route) => void }) {
     setPhase('done')
   }
 
+  useScrollTopOn(`${phase}:${i}`)
+
   useHotkeys((e) => {
     if (phase !== 'study') return
     if (e.key === 'ArrowRight' || e.key === 'Enter') {
@@ -65,7 +67,7 @@ export function Learn({ go }: { go: (r: Route) => void }) {
           <ExitButton onExit={() => setPhase('pick')} label="Dừng học" />
         </div>
         <WordCard key={word.id} word={word} />
-        <div className="row spread">
+        <div className="row spread dock">
           <button className="btn" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>
             <ArrowLeft size={16} /> Trước
           </button>

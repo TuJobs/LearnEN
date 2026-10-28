@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { TOPICS, topicById } from '../data/topics'
-import type { Score } from '../lib/hooks'
+import { useScrollTopOn, type Score } from '../lib/hooks'
 import type { TopicFilter } from '../lib/pick'
 import { sfx } from '../lib/sfx'
 import { speak } from '../lib/speech'
@@ -288,6 +288,7 @@ export function ExitButton({ onExit, label = 'Thoát ván chơi' }: { onExit: ()
 }
 
 export function RoundHeader({ index, total, score, onExit }: { index: number; total: number; score: Score; onExit?: () => void }) {
+  useScrollTopOn(index)
   return (
     <div className="round-head">
       <ProgressBar value={index / total} label="Tiến độ lượt chơi" />

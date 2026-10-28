@@ -165,7 +165,7 @@ export function App() {
               {lvl.current.icon} {lvl.current.title}
             </span>
             <button
-              className="icon-btn"
+              className="icon-btn theme-toggle"
               onClick={() => updateSettings({ theme: theme === 'dark' ? 'light' : 'dark' })}
               title={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
               aria-label="Đổi giao diện sáng/tối"

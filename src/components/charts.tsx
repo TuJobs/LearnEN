@@ -47,15 +47,20 @@ function showTick(i: number, count: number, band: number, anchor: 'start' | 'end
 /** Shared pointer + keyboard handling: the active index follows the pointer or the arrow keys. */
 function useActive(count: number, band: number) {
   const [active, setActive] = useState<number | null>(null)
+  function pick(e: PointerEvent<SVGSVGElement>) {
+    const i = Math.floor((e.clientX - e.currentTarget.getBoundingClientRect().left - FRAME.ml) / band)
+    setActive(i >= 0 && i < count ? i : null)
+  }
   return {
     active,
     handlers: {
       tabIndex: 0,
-      onPointerMove(e: PointerEvent<SVGSVGElement>) {
-        const i = Math.floor((e.clientX - e.currentTarget.getBoundingClientRect().left - FRAME.ml) / band)
-        setActive(i >= 0 && i < count ? i : null)
+      onPointerMove: pick,
+      // A tap has no hover: it selects a bar and the tooltip stays until the next tap.
+      onPointerDown: pick,
+      onPointerLeave(e: PointerEvent<SVGSVGElement>) {
+        if (e.pointerType !== 'touch') setActive(null)
       },
-      onPointerLeave: () => setActive(null),
       onFocus: () => setActive(count - 1),
       onBlur: () => setActive(null),
       onKeyDown(e: KeyboardEvent<SVGSVGElement>) {
@@ -284,7 +289,7 @@ export function StackedBar({ segments, title, unit }: { segments: Segment[]; tit
   const clipId = `clip${useId().replace(/[^a-zA-Z0-9]/g, '')}`
   const parts = segments.filter((s) => s.value > 0)
   const total = parts.reduce((sum, s) => sum + s.value, 0)
-  const h = 30
+  const h = 36
   const gap = 2
   const avail = Math.max(0, width - gap * (parts.length - 1))
   let cursor = 0
@@ -305,7 +310,7 @@ export function StackedBar({ segments, title, unit }: { segments: Segment[]; tit
           role="group"
           aria-label={title}
           tabIndex={0}
-          onPointerLeave={() => setActive(null)}
+          onPointerLeave={(e) => e.pointerType !== 'touch' && setActive(null)}
           onFocus={() => setActive(0)}
           onBlur={() => setActive(null)}
           onKeyDown={(e) => {
@@ -329,6 +334,7 @@ export function StackedBar({ segments, title, unit }: { segments: Segment[]; tit
                 height={h}
                 style={{ fill: `var(${s.color})` }}
                 onPointerEnter={() => setActive(i)}
+                onPointerDown={() => setActive(i)}
               />
             ))}
           </g>

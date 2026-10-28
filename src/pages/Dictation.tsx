@@ -1,7 +1,7 @@
 import { ArrowRight, Lightbulb, Play, RotateCcw, Text, Type, Volume2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { GameIntro, Kbd, RoundHeader, SpeakButton, Summary, TopicPicker, VerdictLine } from '../components/ui'
-import { useHotkeys, useScore } from '../lib/hooks'
+import { useHotkeys, useReveal, useScore } from '../lib/hooks'
 import { pickWords, type TopicFilter } from '../lib/pick'
 import { speak } from '../lib/speech'
 import { finishGame, getProgress, practice } from '../lib/store'
@@ -75,6 +75,8 @@ export function Dictation() {
     setShowHint(false)
     setResult(null)
   }
+
+  const revealRef = useReveal<HTMLDivElement>(result)
 
   useHotkeys((e) => {
     if (result && e.key === 'Enter') {
@@ -172,7 +174,7 @@ export function Dictation() {
         />
       </form>
       {result && (
-        <div className="after">
+        <div className="after" ref={revealRef}>
           <VerdictLine verdict={result.verdict} />
           {result.hits ? (
             <p className="diff">

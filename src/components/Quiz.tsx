@@ -1,6 +1,6 @@
 import { ArrowRight, Check, X } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
-import { useHotkeys } from '../lib/hooks'
+import { useHotkeys, useReveal, useScrollTopOn } from '../lib/hooks'
 import { distractors } from '../lib/pick'
 import { sfx } from '../lib/sfx'
 import { checkAnswer, parseExample, shuffle, type Verdict } from '../lib/text'
@@ -55,6 +55,9 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
     if (!input.trim() || answer) return
     resolve(checkAnswer(input, [target, task.word.word]))
   }
+
+  const revealRef = useReveal<HTMLDivElement>(answer)
+  useScrollTopOn(pos)
 
   useHotkeys((e) => {
     if (answer && (e.key === 'Enter' || e.key === ' ')) {
@@ -137,7 +140,7 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
       )}
 
       {answer && (
-        <div className="after">
+        <div className="after" ref={revealRef}>
           <VerdictLine verdict={answer.verdict}>
             {answer.verdict !== 'correct' && (
               <>

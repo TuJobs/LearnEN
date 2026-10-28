@@ -135,6 +135,11 @@
   box-sizing: border-box;
 }
 
+html {
+  /* No double-tap zoom when tapping game tiles quickly; pinch-zoom still works. */
+  touch-action: manipulation;
+}
+
 html,
 body {
   margin: 0;
@@ -268,8 +273,10 @@ p {
   text-transform: uppercase;
   color: var(--muted);
 }
-button.nav-section:hover {
-  color: var(--text);
+@media (hover: hover) {
+  button.nav-section:hover {
+    color: var(--text);
+  }
 }
 
 .nav-item {
@@ -287,9 +294,11 @@ button.nav-section:hover {
   text-align: left;
   transition: background 0.15s, color 0.15s;
 }
-.nav-item:hover {
-  background: var(--surface-3);
-  color: var(--text);
+@media (hover: hover) {
+  .nav-item:hover {
+    background: var(--surface-3);
+    color: var(--text);
+  }
 }
 .nav-item.active {
   background: var(--accent-soft);
@@ -331,8 +340,10 @@ button.nav-section:hover {
   background: var(--surface-2);
   text-align: left;
 }
-.level-card:hover {
-  border-color: var(--border-strong);
+@media (hover: hover) {
+  .level-card:hover {
+    border-color: var(--border-strong);
+  }
 }
 .level-card .row {
   flex-wrap: nowrap;
@@ -493,9 +504,11 @@ button.nav-section:hover {
   white-space: nowrap;
   transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
 }
-.btn:hover:not(:disabled) {
-  background: var(--surface-3);
-  border-color: var(--border-strong);
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    background: var(--surface-3);
+    border-color: var(--border-strong);
+  }
 }
 .btn:active:not(:disabled) {
   transform: translateY(1px);
@@ -509,18 +522,22 @@ button.nav-section:hover {
   color: #fff;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 4px 14px color-mix(in srgb, var(--green-strong) 35%, transparent);
 }
-.btn.primary:hover:not(:disabled) {
-  background: var(--green-strong);
-  filter: brightness(1.08);
+@media (hover: hover) {
+  .btn.primary:hover:not(:disabled) {
+    background: var(--green-strong);
+    filter: brightness(1.08);
+  }
 }
 .btn.ghost {
   border-color: transparent;
   background: none;
   color: var(--muted);
 }
-.btn.ghost:hover:not(:disabled) {
-  background: var(--surface-3);
-  color: var(--text);
+@media (hover: hover) {
+  .btn.ghost:hover:not(:disabled) {
+    background: var(--surface-3);
+    color: var(--text);
+  }
 }
 .btn.danger {
   color: var(--red);
@@ -539,6 +556,7 @@ button.nav-section:hover {
 }
 
 .icon-btn {
+  flex-shrink: 0;
   display: inline-grid;
   place-items: center;
   width: 34px;
@@ -550,17 +568,21 @@ button.nav-section:hover {
   vertical-align: middle;
   transition: background 0.15s, color 0.15s;
 }
-.icon-btn:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
+@media (hover: hover) {
+  .icon-btn:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
 }
 .icon-btn.solid {
   background: var(--accent-soft);
   color: var(--accent);
 }
-.icon-btn.solid:hover {
-  background: var(--accent);
-  color: var(--on-accent);
+@media (hover: hover) {
+  .icon-btn.solid:hover {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
 }
 
 .pill {
@@ -642,9 +664,11 @@ button.nav-section:hover {
   font-weight: 500;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.chip:hover {
-  border-color: var(--border-strong);
-  color: var(--text);
+@media (hover: hover) {
+  .chip:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+  }
 }
 .chip.active {
   border-color: var(--accent);
@@ -992,6 +1016,7 @@ mark {
   gap: 12px;
 }
 .wc-word {
+  overflow-wrap: anywhere;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1052,6 +1077,7 @@ mark {
 }
 
 .big-word {
+  overflow-wrap: anywhere;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1163,9 +1189,11 @@ mark {
   text-align: left;
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
 }
-.option:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--surface-3);
+@media (hover: hover) {
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--surface-3);
+  }
 }
 .option:active:not(:disabled) {
   transform: scale(0.99);
@@ -1237,10 +1265,15 @@ mark {
 .grade .small {
   color: var(--muted);
 }
-.grade:hover,
 .grade.suggested {
   border-color: var(--tone);
   background: color-mix(in srgb, var(--tone) 10%, var(--surface));
+}
+@media (hover: hover) {
+  .grade:hover {
+    border-color: var(--tone);
+    background: color-mix(in srgb, var(--tone) 10%, var(--surface));
+  }
 }
 .grade.suggested {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone) 25%, transparent);
@@ -1277,8 +1310,10 @@ mark {
   box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 40%, transparent);
   transition: transform 0.15s;
 }
-.play-btn:hover {
-  transform: scale(1.05);
+@media (hover: hover) {
+  .play-btn:hover {
+    transform: scale(1.05);
+  }
 }
 .play-btn:active {
   transform: scale(0.97);
@@ -1366,8 +1401,10 @@ mark {
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
   animation: pop 0.2s var(--ease);
 }
-.word-tile:hover:not(:disabled) {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .word-tile:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
 }
 .word-tile:active:not(:disabled) {
   transform: translateY(2px);
@@ -1519,8 +1556,10 @@ mark {
   color: var(--muted);
   cursor: pointer;
 }
-.viz-table summary:hover {
-  color: var(--text);
+@media (hover: hover) {
+  .viz-table summary:hover {
+    color: var(--text);
+  }
 }
 .viz-table table {
   width: 100%;
@@ -1619,8 +1658,10 @@ mark {
   text-align: center;
   transition: border-color 0.15s, background 0.15s, opacity 0.3s, transform 0.1s;
 }
-.tile:hover:not(:disabled) {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .tile:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
 }
 .tile:active:not(:disabled) {
   transform: scale(0.98);
@@ -1651,6 +1692,16 @@ mark {
   flex-wrap: wrap;
   gap: 4px;
 }
+.word-tile,
+.tile,
+.tok,
+.option,
+.grade,
+.tab {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 .tok {
   min-height: 34px;
   padding: 2px 8px;
@@ -1660,9 +1711,11 @@ mark {
   font: inherit;
   transition: border-color 0.12s, background 0.12s;
 }
-.tok:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+@media (hover: hover) {
+  .tok:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
 }
 .tok.miss {
   color: var(--muted);
@@ -1732,11 +1785,13 @@ mark {
   text-align: left;
   transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
-.scenario-card:hover,
-.game-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .scenario-card:hover,
+  .game-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
 }
 .scenario-icon {
   font-size: 34px;
@@ -1889,8 +1944,10 @@ mark {
   color: #fff;
   transition: transform 0.15s;
 }
-.mic-btn:hover:not(:disabled) {
-  transform: scale(1.05);
+@media (hover: hover) {
+  .mic-btn:hover:not(:disabled) {
+    transform: scale(1.05);
+  }
 }
 .mic-btn.recording {
   animation: pulse-ring 1.2s infinite;
@@ -2002,8 +2059,10 @@ mark {
   text-align: left;
   transition: border-color 0.15s, background 0.15s;
 }
-.plan-steps button:hover {
-  border-color: var(--border-strong);
+@media (hover: hover) {
+  .plan-steps button:hover {
+    border-color: var(--border-strong);
+  }
 }
 .plan-steps button > svg:last-child {
   color: var(--muted);
@@ -2361,8 +2420,10 @@ mark {
   background: none;
   text-align: left;
 }
-.dict-row:hover {
-  border-color: var(--border-strong);
+@media (hover: hover) {
+  .dict-row:hover {
+    border-color: var(--border-strong);
+  }
 }
 .dict-item.open .dict-row {
   border-color: var(--accent);
@@ -2484,6 +2545,12 @@ mark {
     transform: translateX(24px);
   }
 }
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
 @keyframes float-up {
   from {
     opacity: 1;
@@ -2537,17 +2604,15 @@ mark {
 
 @media (max-width: 1100px) {
   .stat-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 900px) {
   .hero,
-  .speak-layout {
-    grid-template-columns: 1fr;
-  }
+  .speak-layout,
   .topic-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -2649,7 +2714,69 @@ mark {
     display: inline-grid;
   }
   .page {
-    padding: 16px 14px calc(96px + env(safe-area-inset-bottom));
+    padding: 16px max(14px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  }
+  .topbar {
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+
+  /* Touch targets: at least 44px tall everywhere. */
+  .btn,
+  .chip,
+  .segmented button,
+  .tok,
+  .setting select {
+    min-height: 44px;
+  }
+  .word-tile,
+  .tok {
+    min-width: 44px;
+  }
+  .setting input[type='range'] {
+    height: 44px;
+  }
+  .viz-table summary {
+    padding: 12px 0;
+  }
+  .hero-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* The soft keyboard needs the room; the tab bar comes back when typing ends. */
+  .app:has(.text-input:focus) .tabbar {
+    display: none;
+  }
+  .app:has(.text-input:focus) .after > .btn.primary {
+    bottom: 12px;
+  }
+  .after {
+    scroll-margin-bottom: 96px;
+  }
+
+  /* Review grades and study navigation stay docked above the tab bar. */
+  .dock {
+    position: sticky;
+    bottom: calc(62px + env(safe-area-inset-bottom));
+    z-index: 5;
+    margin: 0 -14px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(10px);
+  }
+  .dock .grades {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .dock .grade {
+    min-height: 58px;
+    padding: 6px 2px;
+  }
+  .dock .grade .small {
+    font-size: 11px;
+    line-height: 1.3;
+    text-align: center;
   }
   .card {
     padding: 18px;
@@ -2663,7 +2790,7 @@ mark {
     z-index: var(--z-nav);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    padding: 6px max(6px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
     border-top: 1px solid var(--border);
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     backdrop-filter: blur(12px);
@@ -2693,17 +2820,19 @@ mark {
     margin: 0;
   }
 
+  /* Top of the screen on phones: the bottom belongs to the tab bar and docked actions. */
   .toasts {
+    top: calc(62px + env(safe-area-inset-top));
     right: 12px;
-    bottom: calc(76px + env(safe-area-inset-bottom));
+    bottom: auto;
     left: 12px;
+  }
+  .toast {
+    animation-name: slide-down;
   }
 
   .options {
     grid-template-columns: 1fr;
-  }
-  .grades {
-    grid-template-columns: repeat(2, 1fr);
   }
   .stat-grid {
     gap: 10px;
@@ -2730,9 +2859,6 @@ mark {
     width: 44px;
     height: 44px;
   }
-  .chip {
-    min-height: 40px;
-  }
   .wc-word {
     font-size: 30px;
   }
@@ -2741,5 +2867,37 @@ mark {
   }
   .word-card {
     padding: 20px;
+  }
+}
+
+/* Small phones (iPhone SE, compact Android). */
+@media (max-width: 380px) {
+  .big-word {
+    font-size: 28px;
+  }
+  .wc-word {
+    font-size: 26px;
+  }
+  .title,
+  .hero-level .title {
+    font-size: 22px;
+  }
+  .avatar-tile.lg {
+    width: 52px;
+    height: 52px;
+    font-size: 28px;
+  }
+  .mini-stat {
+    padding: 10px 8px;
+  }
+  .mini-stat b {
+    font-size: 17px;
+  }
+  .top-stats .pill {
+    padding: 3px 7px;
+  }
+  /* Room for the page title; the theme switch is also in Settings. */
+  .theme-toggle {
+    display: none;
   }
 }

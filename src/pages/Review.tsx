@@ -2,7 +2,7 @@ import { BookOpen, Eye, GitMerge, House, RotateCcw } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { wordById } from '../data/words'
 import { ContextView, Example, ExitButton, Kbd, ProgressBar, SpeakButton, Summary, VerdictLine, WordCard, sayWord } from '../components/ui'
-import { useHotkeys } from '../lib/hooks'
+import { useHotkeys, useScrollTopOn } from '../lib/hooks'
 import { dueIds } from '../lib/pick'
 import { sfx } from '../lib/sfx'
 import { formatInterval, newCard, nextInterval, type Grade } from '../lib/srs'
@@ -63,6 +63,8 @@ export function Review({ go }: { go: (r: Route) => void }) {
     e.preventDefault()
     if (word) reveal(input.trim() ? checkAnswer(input, [parseExample(word.ex).target, word.word]) : 'wrong')
   }
+
+  useScrollTopOn(pos)
 
   useHotkeys((e) => {
     if (!word) return
@@ -192,7 +194,7 @@ export function Review({ go }: { go: (r: Route) => void }) {
       {flipped && (
         <>
           <WordCard word={word} />
-          <div>
+          <div className="dock">
             <div className="field-label">Bạn nhớ từ này thế nào?</div>
             <div className="grades">
               {GRADES.map((g) => (

@@ -2,7 +2,7 @@ import { ArrowRight, Play, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { GameIntro, Kbd, RoundHeader, SpeakButton, Summary, TopicPicker, VerdictLine } from '../components/ui'
 import { isBuildable, isCorrectOrder, scenarioRounds, scramble, wordRound, type BuildRound } from '../lib/builder'
-import { useHotkeys, useScore } from '../lib/hooks'
+import { useHotkeys, useReveal, useScore } from '../lib/hooks'
 import { pickWords, type TopicFilter } from '../lib/pick'
 import { speak } from '../lib/speech'
 import { addXP, finishGame, getProgress, practice } from '../lib/store'
@@ -82,6 +82,8 @@ export function Builder() {
     setI(i + 1)
     load(rounds[i + 1])
   }
+
+  const revealRef = useReveal<HTMLDivElement>(result !== null)
 
   useHotkeys((e) => {
     // Enter on a focused, still-clickable tile belongs to that tile (a used tile is disabled).
@@ -189,7 +191,7 @@ export function Builder() {
           </button>
         </div>
       ) : (
-        <div className="after">
+        <div className="after" ref={revealRef}>
           <VerdictLine verdict={result ? 'correct' : 'wrong'} label={result ? 'Build succeeded' : 'Compile error'}>
             {result ? 'Đúng trật tự từ rồi!' : 'Trật tự từ chưa đúng — những ô viền đỏ đang sai vị trí.'}
           </VerdictLine>

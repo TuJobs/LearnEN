@@ -2,7 +2,7 @@ import { ArrowRight, Eye, Play, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { BUGS } from '../data/bugs'
 import { ContextView, GameIntro, Kbd, Note, RoundHeader, SpeakButton, Summary, VerdictLine } from '../components/ui'
-import { useHotkeys, useScore } from '../lib/hooks'
+import { useHotkeys, useReveal, useScore } from '../lib/hooks'
 import { speak } from '../lib/speech'
 import { addXP, bumpStat, finishGame } from '../lib/store'
 import { shuffle, tokenizeBug } from '../lib/text'
@@ -65,6 +65,8 @@ export function Bugs() {
     setMisses([])
     setState('hunt')
   }
+
+  const revealRef = useReveal<HTMLDivElement>(state !== 'hunt')
 
   useHotkeys((e) => {
     if (state !== 'hunt' && e.key === 'Enter') {
@@ -136,7 +138,7 @@ export function Bugs() {
           </button>
         </div>
       ) : (
-        <div className="after">
+        <div className="after" ref={revealRef}>
           <VerdictLine verdict={state === 'found' ? 'correct' : 'wrong'} label={state === 'found' ? 'Bắt được bug!' : 'Bug đã trốn thoát'} />
           <div className="fix">
             <div className="fix-line del">

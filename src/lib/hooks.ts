@@ -53,6 +53,24 @@ export function useHotkeys(handler: (e: KeyboardEvent) => void) {
   }, [])
 }
 
+const motionOK = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** Scrolls the element into view whenever `trigger` turns truthy, e.g. the feedback after an answer. */
+export function useReveal<T extends HTMLElement>(trigger: unknown) {
+  const ref = useRef<T>(null)
+  useEffect(() => {
+    if (trigger) ref.current?.scrollIntoView({ block: 'nearest', behavior: motionOK() ? 'smooth' : 'auto' })
+  }, [trigger])
+  return ref
+}
+
+/** Jumps back to the top when a new question starts, so it never opens half-scrolled on a phone. */
+export function useScrollTopOn(key: unknown) {
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [key])
+}
+
 export interface Score {
   xp: number
   combo: number

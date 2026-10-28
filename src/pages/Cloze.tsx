@@ -1,7 +1,7 @@
 import { ArrowRight, Lightbulb, Play, RotateCcw } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { ContextView, Example, GameIntro, Kbd, RoundHeader, Summary, TopicPicker, VerdictLine, sayExample } from '../components/ui'
-import { useHotkeys, useScore } from '../lib/hooks'
+import { useHotkeys, useReveal, useScore } from '../lib/hooks'
 import { pickWords, type TopicFilter } from '../lib/pick'
 import { finishGame, getProgress, practice } from '../lib/store'
 import { checkAnswer, normalize, parseExample, type Verdict } from '../lib/text'
@@ -67,6 +67,8 @@ export function Cloze() {
     setHint(false)
     setResult(null)
   }
+
+  const revealRef = useReveal<HTMLDivElement>(result)
 
   useHotkeys((e) => {
     if (result && e.key === 'Enter') {
@@ -155,7 +157,7 @@ export function Cloze() {
         </button>
       )}
       {result && (
-        <div className="after">
+        <div className="after" ref={revealRef}>
           <VerdictLine verdict={result.verdict}>
             {result.note ??
               (result.verdict !== 'correct' && (

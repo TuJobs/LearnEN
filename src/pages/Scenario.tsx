@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight, ChevronRight, MessageSquareQuote, RotateCcw, Sta
 import { useEffect, useMemo, useState } from 'react'
 import { SCENARIOS } from '../data/scenarios'
 import { ExitButton, GameIntro, Kbd, Note, ProgressBar, SpeakButton, Summary, VerdictLine } from '../components/ui'
-import { useHotkeys } from '../lib/hooks'
+import { useHotkeys, useReveal } from '../lib/hooks'
 import { sfx } from '../lib/sfx'
 import { speak } from '../lib/speech'
 import { addXP, finishGame, saveScenario, useProgress } from '../lib/store'
@@ -65,6 +65,9 @@ export function Scenario() {
     finishGame(total === current.steps.length * 2, 0)
     setFinished(true)
   }
+
+  const revealRef = useReveal<HTMLDivElement>(picked)
+  const goalRef = useReveal<HTMLDivElement>(s && !picked ? step + 1 : 0)
 
   useHotkeys((e) => {
     if (picked && !finished && e.key === 'Enter') {
@@ -162,7 +165,7 @@ export function Scenario() {
 
       {s && !picked && (
         <>
-          <div className="goal">
+          <div className="goal" ref={goalRef}>
             <Target size={18} />
             <div>
               <b>Bạn muốn nói:</b> {s.goal}
@@ -179,7 +182,7 @@ export function Scenario() {
       )}
 
       {s && picked && (
-        <div className="after">
+        <div className="after" ref={revealRef}>
           <VerdictLine verdict={VERDICT_OF[picked.score]} label={VERDICT_LABEL[picked.score]}>
             {picked.note}
           </VerdictLine>
