@@ -1,6 +1,6 @@
-import { ArrowRight, Lightbulb, Play, RotateCcw } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { ContextView, Example, GameIntro, Kbd, RoundHeader, Summary, TopicPicker, VerdictLine, sayExample } from '../components/ui'
+import { Lightbulb, Play, RotateCcw } from 'lucide-react'
+import { useState } from 'react'
+import { AnswerInput, ContextView, Example, GameIntro, NextButton, RoundHeader, Summary, TopicPicker, VerdictLine, sayExample } from '../components/ui'
 import { useHotkeys, useReveal, useScore } from '../lib/hooks'
 import { pickWords, type TopicFilter } from '../lib/pick'
 import { finishGame, getProgress, practice } from '../lib/store'
@@ -34,13 +34,12 @@ export function Cloze() {
 
   const word = words?.[i]
 
-  function submit(e: FormEvent) {
-    e.preventDefault()
-    if (!word || result) return
+  function check(value: string) {
+    if (!word || result || !value.trim()) return
     const { target } = parseExample(word.ex)
-    let verdict = input.trim() ? checkAnswer(input, [target]) : 'wrong'
+    let verdict = checkAnswer(value, [target])
     let note: string | undefined
-    if (verdict !== 'correct' && normalize(input) === normalize(word.word)) {
+    if (verdict !== 'correct' && normalize(value) === normalize(word.word)) {
       verdict = 'close'
       note = `Đúng từ rồi! Nhưng câu này cần dạng “${target}”.`
     }
@@ -136,21 +135,17 @@ export function Cloze() {
         <span className="lang">VI</span>
         <span>{word.exVi}</span>
       </div>
-      <form className="answer-form" onSubmit={submit}>
-        <input
-          key={i}
-          className={`text-input ${result?.verdict ?? ''}`}
-          autoFocus
-          disabled={!!result}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Gõ từ còn thiếu rồi nhấn Enter…"
-          aria-label="Từ còn thiếu"
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck={false}
-        />
-      </form>
+      <AnswerInput
+        key={i}
+        value={input}
+        onChange={setInput}
+        onSubmit={check}
+        accepts={(v) => normalize(v) === normalize(target)}
+        done={!!result}
+        verdict={result?.verdict}
+        placeholder="Gõ từ còn thiếu…"
+        label="Từ còn thiếu"
+      />
       {!result && (
         <button className="btn ghost" onClick={() => setHint(true)} disabled={hint}>
           <Lightbulb size={16} /> Gợi ý chữ cái đầu (−5 XP)
@@ -169,9 +164,7 @@ export function Cloze() {
           <div className="muted small">
             <b className="text">{word.word}</b> <span className="ipa">{word.ipa}</span> — {word.vi}
           </div>
-          <button className="btn primary" onClick={next}>
-            Tiếp <ArrowRight size={16} /> <Kbd>Enter</Kbd>
-          </button>
+          <NextButton onNext={next} auto={result.verdict === 'correct'} />
         </div>
       )}
     </div>

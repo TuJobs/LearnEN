@@ -773,6 +773,47 @@ p {
 .answer-form {
   margin: 14px 0 6px;
 }
+.answer-row {
+  display: flex;
+  gap: 8px;
+}
+.answer-row .text-input {
+  flex: 1;
+  min-width: 0;
+}
+.answer-row .btn {
+  flex: none;
+  min-height: 52px;
+}
+.answer-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.next-btn {
+  position: relative;
+  overflow: hidden;
+}
+/* Fills up while a correct answer waits to move on by itself. */
+.next-btn.auto::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.75);
+  transform-origin: left;
+  animation: auto-next var(--auto-next, 1400ms) linear forwards;
+}
+@keyframes auto-next {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
 
 .search {
   position: relative;
@@ -2872,6 +2913,12 @@ mark {
 
 /* Small phones (iPhone SE, compact Android). */
 @media (max-width: 380px) {
+  .answer-row {
+    flex-wrap: wrap;
+  }
+  .answer-row .btn {
+    width: 100%;
+  }
   .big-word {
     font-size: 28px;
   }

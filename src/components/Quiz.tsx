@@ -1,11 +1,11 @@
-import { ArrowRight, Check, X } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
+import { Check, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useHotkeys, useReveal, useScrollTopOn } from '../lib/hooks'
 import { distractors } from '../lib/pick'
 import { sfx } from '../lib/sfx'
 import { checkAnswer, parseExample, shuffle, type Verdict } from '../lib/text'
 import type { Word } from '../types'
-import { ContextView, Example, ExitButton, Kbd, ProgressBar, SpeakButton, VerdictLine, sayWord } from './ui'
+import { AnswerInput, ContextView, Example, ExitButton, Kbd, NextButton, ProgressBar, SpeakButton, VerdictLine, sayWord } from './ui'
 
 interface Task {
   kind: 'choice' | 'type'
@@ -50,10 +50,10 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
     setInput('')
   }
 
-  function submit(e: FormEvent) {
-    e.preventDefault()
-    if (!input.trim() || answer) return
-    resolve(checkAnswer(input, [target, task.word.word]))
+  const answers = [target, task.word.word]
+
+  function check(value: string) {
+    if (value.trim() && !answer) resolve(checkAnswer(value, answers))
   }
 
   const revealRef = useReveal<HTMLDivElement>(answer)
@@ -121,21 +121,15 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
               blank={<span className={`blank ${answer ? 'filled' : ''}`}>{answer ? target : '____'}</span>}
             />
           </ContextView>
-          <form className="answer-form" onSubmit={submit}>
-            <input
-              key={pos}
-              className={`text-input ${answer?.verdict ?? ''}`}
-              autoFocus
-              disabled={!!answer}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Gõ đáp án rồi nhấn Enter…"
-              aria-label="Đáp án"
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck={false}
-            />
-          </form>
+          <AnswerInput
+            key={pos}
+            value={input}
+            onChange={setInput}
+            onSubmit={check}
+            accepts={(v) => checkAnswer(v, answers) === 'correct'}
+            done={!!answer}
+            verdict={answer?.verdict}
+          />
         </>
       )}
 
@@ -149,9 +143,9 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
               </>
             )}
           </VerdictLine>
-          <button type="button" className="btn primary" onClick={next}>
-            Tiếp tục <ArrowRight size={16} /> <Kbd>Enter</Kbd>
-          </button>
+          <NextButton onNext={next} auto={answer.verdict === 'correct'}>
+            Tiếp tục
+          </NextButton>
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
-import { ArrowRight, Play, RotateCcw } from 'lucide-react'
+import { Play, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
-import { GameIntro, Kbd, RoundHeader, SpeakButton, Summary, TopicPicker, VerdictLine } from '../components/ui'
+import { GameIntro, Kbd, NextButton, RoundHeader, SpeakButton, Summary, TopicPicker, VerdictLine } from '../components/ui'
 import { isBuildable, isCorrectOrder, scenarioRounds, scramble, wordRound, type BuildRound } from '../lib/builder'
 import { useHotkeys, useReveal, useScore } from '../lib/hooks'
 import { pickWords, type TopicFilter } from '../lib/pick'
@@ -202,9 +202,7 @@ export function Builder() {
               <SpeakButton onSpeak={() => speak(sentenceOf(round))} title="Nghe câu đúng" />
             </div>
           </div>
-          <button className="btn primary" onClick={next}>
-            Tiếp <ArrowRight size={16} /> <Kbd>Enter</Kbd>
-          </button>
+          <NextButton onNext={next} auto={result} />
         </div>
       )}
     </div>

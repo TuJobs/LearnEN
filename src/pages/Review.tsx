@@ -1,7 +1,7 @@
 import { BookOpen, Eye, GitMerge, House, RotateCcw } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { wordById } from '../data/words'
-import { ContextView, Example, ExitButton, Kbd, ProgressBar, SpeakButton, Summary, VerdictLine, WordCard, sayWord } from '../components/ui'
+import { AnswerInput, ContextView, Example, ExitButton, Kbd, ProgressBar, SpeakButton, Summary, VerdictLine, WordCard, sayWord } from '../components/ui'
 import { useHotkeys, useScrollTopOn } from '../lib/hooks'
 import { dueIds } from '../lib/pick'
 import { sfx } from '../lib/sfx'
@@ -40,10 +40,12 @@ export function Review({ go }: { go: (r: Route) => void }) {
   }, [word, mode])
 
   function grade(g: Grade) {
-    if (!id) return
+    if (!id || !card) return
+    // Cards due again within minutes (Again, or Hard while still learning) come back this session.
+    const comesBackToday = nextInterval(card, g) < 1
     gradeCard(id, g)
     setTally((t) => ({ done: t.done + 1, again: t.again + (g === 0 ? 1 : 0) }))
-    if (g === 0) setQueue((q) => [...q, id])
+    if (comesBackToday) setQueue((q) => [...q, id])
     setPos(pos + 1)
     setFlipped(false)
     setInput('')
@@ -59,9 +61,10 @@ export function Review({ go }: { go: (r: Route) => void }) {
     sayWord(word)
   }
 
-  function submit(e: FormEvent) {
-    e.preventDefault()
-    if (word) reveal(input.trim() ? checkAnswer(input, [parseExample(word.ex).target, word.word]) : 'wrong')
+  const answers = word ? [parseExample(word.ex).target, word.word] : []
+
+  function check(value: string) {
+    if (!flipped) reveal(value.trim() ? checkAnswer(value, answers) : 'wrong')
   }
 
   useScrollTopOn(pos)
@@ -159,21 +162,16 @@ export function Review({ go }: { go: (r: Route) => void }) {
           <ContextView ctx={word.ctx}>
             <Example text={word.ex} blank={<span className={`blank ${flipped ? 'filled' : ''}`}>{flipped ? target : '____'}</span>} />
           </ContextView>
-          <form className="answer-form" onSubmit={submit}>
-            <input
-              key={pos}
-              className={`text-input ${verdict ?? ''}`}
-              autoFocus
-              disabled={flipped}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Gõ từ tiếng Anh rồi nhấn Enter…"
-              aria-label="Đáp án"
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck={false}
-            />
-          </form>
+          <AnswerInput
+            key={pos}
+            value={input}
+            onChange={setInput}
+            onSubmit={check}
+            accepts={(v) => checkAnswer(v, answers) === 'correct'}
+            done={flipped}
+            verdict={verdict}
+            placeholder="Gõ từ tiếng Anh…"
+          />
           {!flipped && (
             <button className="btn ghost" onClick={() => reveal('wrong')}>
               <Eye size={16} /> Không nhớ, xem đáp án

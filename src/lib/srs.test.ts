@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DAY, mastery, newCard, nextInterval, review } from './srs'
+import { formatInterval, mastery, newCard, nextInterval, review } from './srs'
 
 const NOW = new Date(2026, 0, 10, 15, 0).getTime()
 
@@ -15,9 +15,28 @@ describe('srs', () => {
     expect(mastery(card)).toBe('mature')
   })
 
-  it('schedules reviews at the start of the target day', () => {
+  it('makes a card due from 4 AM of the target day, not at midnight', () => {
     const card = review(newCard(NOW), 2, NOW)
-    expect(card.due).toBe(new Date(2026, 0, 10).getTime() + DAY)
+    expect(card.due).toBe(new Date(2026, 0, 11, 4).getTime())
+    // Reviewing at 23:30 must not bring the card back 30 minutes later.
+    const late = new Date(2026, 0, 10, 23, 30).getTime()
+    expect(review(newCard(late), 2, late).due).toBe(new Date(2026, 0, 11, 4).getTime())
+  })
+
+  it('keeps a new card in learning for 10 minutes on Hard', () => {
+    const card = review(newCard(NOW), 1, NOW)
+    expect(card).toMatchObject({ reps: 0, due: NOW + 10 * 60_000 })
+    expect(mastery(card)).toBe('learning')
+    expect(formatInterval(nextInterval(newCard(NOW), 1))).toBe('10 phút')
+  })
+
+  it('gives Hard, Good and Easy different intervals at every stage', () => {
+    const stages = [newCard(NOW), { ...newCard(NOW), reps: 1, interval: 1 }, { ...newCard(NOW), reps: 2, interval: 1, ease: 2.3 }, { ...newCard(NOW), reps: 4, interval: 12, ease: 1.3 }]
+    for (const card of stages) {
+      const [hard, good, easy] = ([1, 2, 3] as const).map((g) => nextInterval(card, g))
+      expect(hard).toBeLessThan(good)
+      expect(good).toBeLessThan(easy)
+    }
   })
 
   it('resets a forgotten card and lowers its ease', () => {

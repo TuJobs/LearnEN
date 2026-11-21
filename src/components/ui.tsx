@@ -1,4 +1,6 @@
 import {
+  ArrowRight,
+  Check,
   CircleAlert,
   CircleCheck,
   CircleX,
@@ -12,9 +14,9 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, type CSSProperties, type ReactNode } from 'react'
 import { TOPICS, topicById } from '../data/topics'
-import { useScrollTopOn, type Score } from '../lib/hooks'
+import { AUTO_NEXT_MS, useAutoAdvance, useScrollTopOn, type Score } from '../lib/hooks'
 import type { TopicFilter } from '../lib/pick'
 import { sfx } from '../lib/sfx'
 import { speak } from '../lib/speech'
@@ -276,6 +278,82 @@ export function ComboPill({ combo }: { combo: number }) {
     <span key={combo} className="pill combo">
       <Flame size={14} /> x{combo}
     </span>
+  )
+}
+
+/**
+ * Typed answer with a visible "Kiểm tra" button. A correct answer is accepted the moment it is
+ * typed (no Enter needed); anything else is checked with Enter or the button.
+ */
+export function AnswerInput({
+  value,
+  onChange,
+  onSubmit,
+  accepts,
+  done,
+  verdict,
+  placeholder = 'Gõ đáp án…',
+  label = 'Đáp án',
+}: {
+  value: string
+  onChange: (v: string) => void
+  onSubmit: (v: string) => void
+  /** True when the text is exactly right: it is then checked without pressing Enter */
+  accepts: (v: string) => boolean
+  done: boolean
+  verdict?: Verdict | null
+  placeholder?: string
+  label?: string
+}) {
+  return (
+    <form
+      className="answer-form"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!done) onSubmit(value)
+      }}
+    >
+      <div className="answer-row">
+        <input
+          className={`text-input ${verdict ?? ''}`}
+          autoFocus
+          disabled={done}
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value
+            onChange(v)
+            if (!done && accepts(v)) onSubmit(v)
+          }}
+          placeholder={placeholder}
+          aria-label={label}
+          autoComplete="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          enterKeyHint="go"
+        />
+        {!done && (
+          <button type="submit" className="btn primary" disabled={!value.trim()}>
+            <Check size={16} /> Kiểm tra
+          </button>
+        )}
+      </div>
+      {!done && <p className="answer-hint">Gõ đúng là tự chấm — không cần nhấn Enter.</p>}
+    </form>
+  )
+}
+
+/** "Next" button; with `auto` (after a correct answer) it fills up and moves on by itself. */
+export function NextButton({ onNext, auto, children = 'Tiếp' }: { onNext: () => void; auto?: boolean; children?: ReactNode }) {
+  useAutoAdvance(!!auto, onNext)
+  return (
+    <button
+      type="button"
+      className={`btn primary next-btn ${auto ? 'auto' : ''}`}
+      style={auto ? ({ '--auto-next': `${AUTO_NEXT_MS}ms` } as CSSProperties) : undefined}
+      onClick={onNext}
+    >
+      {children} <ArrowRight size={16} /> <Kbd>Enter</Kbd>
+    </button>
   )
 }
 

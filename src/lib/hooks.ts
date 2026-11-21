@@ -64,6 +64,22 @@ export function useReveal<T extends HTMLElement>(trigger: unknown) {
   return ref
 }
 
+/** How long a correct answer stays on screen before moving on by itself. */
+export const AUTO_NEXT_MS = 1400
+
+/** Calls `next` after `delay` while `active`; any earlier manual "next" cancels it via the state change. */
+export function useAutoAdvance(active: boolean, next: () => void, delay = AUTO_NEXT_MS) {
+  const ref = useRef(next)
+  useLayoutEffect(() => {
+    ref.current = next
+  })
+  useEffect(() => {
+    if (!active) return
+    const t = setTimeout(() => ref.current(), delay)
+    return () => clearTimeout(t)
+  }, [active, delay])
+}
+
 /** Jumps back to the top when a new question starts, so it never opens half-scrolled on a phone. */
 export function useScrollTopOn(key: unknown) {
   useEffect(() => {

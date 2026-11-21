@@ -1,6 +1,6 @@
-import { ArrowRight, Lightbulb, Play, RotateCcw, Text, Type, Volume2 } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
-import { GameIntro, Kbd, RoundHeader, SpeakButton, Summary, TopicPicker, VerdictLine } from '../components/ui'
+import { Lightbulb, Play, RotateCcw, Text, Type, Volume2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { AnswerInput, GameIntro, NextButton, RoundHeader, SpeakButton, Summary, TopicPicker, VerdictLine } from '../components/ui'
 import { useHotkeys, useReveal, useScore } from '../lib/hooks'
 import { pickWords, type TopicFilter } from '../lib/pick'
 import { speak } from '../lib/speech'
@@ -40,15 +40,18 @@ export function Dictation() {
     reset()
   }
 
-  function submit(e: FormEvent) {
-    e.preventDefault()
-    if (!word || result || !input.trim()) return
+  // A perfect answer is accepted as it is typed; the sentence mode ignores punctuation and case.
+  const isExact = (value: string) =>
+    mode === 'word' ? checkAnswer(value, [answer]) === 'correct' : tokens(value).join(' ') === tokens(answer).join(' ')
+
+  function check(value: string) {
+    if (!word || result || !value.trim()) return
     let verdict: Verdict
     let hits: boolean[] | undefined
     if (mode === 'word') {
-      verdict = checkAnswer(input, [word.word])
+      verdict = checkAnswer(value, [word.word])
     } else {
-      hits = matchTokens(tokens(answer), tokens(input))
+      hits = matchTokens(tokens(answer), tokens(value))
       const ratio = hits.filter(Boolean).length / hits.length
       verdict = ratio >= 0.9 ? 'correct' : ratio >= 0.6 ? 'close' : 'wrong'
     }
@@ -158,21 +161,17 @@ export function Dictation() {
           </p>
         )}
       </div>
-      <form className="answer-form" onSubmit={submit}>
-        <input
-          key={i}
-          className={`text-input ${result?.verdict ?? ''}`}
-          autoFocus
-          disabled={!!result}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={mode === 'word' ? 'Gõ từ bạn nghe được…' : 'Gõ cả câu bạn nghe được…'}
-          aria-label="Những gì bạn nghe được"
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck={false}
-        />
-      </form>
+      <AnswerInput
+        key={i}
+        value={input}
+        onChange={setInput}
+        onSubmit={check}
+        accepts={isExact}
+        done={!!result}
+        verdict={result?.verdict}
+        placeholder={mode === 'word' ? 'Gõ từ bạn nghe được…' : 'Gõ cả câu bạn nghe được…'}
+        label="Những gì bạn nghe được"
+      />
       {result && (
         <div className="after" ref={revealRef}>
           <VerdictLine verdict={result.verdict} />
@@ -192,9 +191,7 @@ export function Dictation() {
           <p className="wc-exvi small">
             <span className="lang">VI</span> {mode === 'word' ? word.vi : word.exVi}
           </p>
-          <button className="btn primary" onClick={next}>
-            Tiếp <ArrowRight size={16} /> <Kbd>Enter</Kbd>
-          </button>
+          <NextButton onNext={next} auto={result.verdict === 'correct'} />
         </div>
       )}
     </div>

@@ -7,7 +7,13 @@ import type { CardState } from '../types'
  */
 
 export const DAY = 24 * 60 * 60 * 1000
+const MINUTE = 60 * 1000
 const MIN_EASE = 1.3
+/** Like Anki, a "day" of reviews starts at 4 AM, so a late-night review isn't due again at midnight. */
+const DAY_STARTS_AT_HOUR = 4
+/** Learning steps (in days) for new or just-forgotten cards: Again → 1 minute, Hard → 10 minutes. */
+const AGAIN_STEP = 1 / 1440
+const HARD_STEP = 10 / 1440
 
 /** 0 = Again (forgot), 1 = Hard, 2 = Good, 3 = Easy */
 export type Grade = 0 | 1 | 2 | 3
@@ -16,20 +22,26 @@ export function newCard(now: number): CardState {
   return { ease: 2.5, interval: 0, reps: 0, lapses: 0, due: now, last: 0 }
 }
 
-function startOfDay(t: number): number {
-  const d = new Date(t)
-  d.setHours(0, 0, 0, 0)
+/** Start of the review day containing `t` (4 AM local time). */
+function startOfReviewDay(t: number): number {
+  const d = new Date(t - DAY_STARTS_AT_HOUR * 60 * MINUTE)
+  d.setHours(DAY_STARTS_AT_HOUR, 0, 0, 0)
   return d.getTime()
 }
 
-/** Days until the next review if the card is answered with `grade`. */
+/**
+ * Days until the next review if the card is answered with `grade` (fractions are minutes).
+ * Hard < Good < Easy always differ, so every button means something.
+ */
 export function nextInterval(card: CardState, grade: Grade): number {
-  if (grade === 0) return 0
-  if (card.reps === 0) return [0, 1, 1, 4][grade]
-  if (card.reps === 1) return [0, 2, 3, 6][grade]
+  if (grade === 0) return AGAIN_STEP
+  if (card.reps === 0) return [AGAIN_STEP, HARD_STEP, 1, 4][grade]
   const base = Math.max(card.interval, 1)
-  const factor = grade === 1 ? 1.2 : grade === 2 ? card.ease : card.ease * 1.3
-  return Math.max(base + 1, Math.round(base * factor))
+  const hard = Math.max(base + 1, Math.round(base * 1.2))
+  if (grade === 1) return hard
+  const good = Math.max(hard + 1, Math.round(base * card.ease))
+  if (grade === 2) return good
+  return Math.max(good + 1, Math.round(base * card.ease * 1.3))
 }
 
 export function review(card: CardState, grade: Grade, now: number): CardState {
@@ -39,11 +51,13 @@ export function review(card: CardState, grade: Grade, now: number): CardState {
       interval: 0,
       reps: 0,
       lapses: card.lapses + 1,
-      due: now + 60_000,
+      due: now + MINUTE,
       last: now,
     }
   }
   const interval = nextInterval(card, grade)
+  // Hard on a card still being learned: repeat it in a few minutes, it hasn't graduated yet.
+  if (interval < 1) return { ...card, due: now + interval * DAY, last: now }
   const ease =
     grade === 1 ? Math.max(MIN_EASE, card.ease - 0.15) : grade === 3 ? card.ease + 0.15 : card.ease
   return {
@@ -51,7 +65,7 @@ export function review(card: CardState, grade: Grade, now: number): CardState {
     interval,
     reps: card.reps + 1,
     lapses: card.lapses,
-    due: startOfDay(now) + interval * DAY,
+    due: startOfReviewDay(now) + interval * DAY,
     last: now,
   }
 }
@@ -72,7 +86,7 @@ export const MASTERY_LABEL: Record<Mastery, string> = {
 }
 
 export function formatInterval(days: number): string {
-  if (days <= 0) return '<1 phút'
+  if (days < 1) return `${Math.max(1, Math.round(days * 1440))} phút`
   if (days < 30) return `${days} ngày`
   if (days < 365) return `${Math.round(days / 30)} tháng`
   return `${(days / 365).toFixed(1)} năm`
