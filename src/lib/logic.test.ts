@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dailyPlan, levelOf, streak } from './gamify'
+import { dailyPlan, levelOf, planNext, streak } from './gamify'
 import { extraIds, pickWords } from './pick'
 import { pickVoice } from './speech'
 import { DAY, newCard } from './srs'
@@ -30,13 +30,17 @@ describe('pickVoice', () => {
 describe('dailyPlan', () => {
   it('walks a new learner through learn → game when nothing is due', () => {
     const steps = dailyPlan(initialProgress(), 0, NOW)
-    expect(steps.map((s) => s.done)).toEqual([true, false, false])
+    // Nothing to review yet: that step is neither done nor the next one.
+    expect(steps.map((s) => s.done)).toEqual([false, false, false])
+    expect(steps[0]).toMatchObject({ idle: true, detail: 'chưa có từ nào để ôn' })
+    expect(planNext(steps)?.route).toBe('learn')
     expect(['cloze', 'bugs', 'match', 'dictation', 'scenario']).toContain(steps[2].route)
   })
 
   it('asks to clear due reviews first and is complete once every step is done', () => {
     const p = initialProgress()
-    expect(dailyPlan(p, 3, NOW)[0]).toMatchObject({ done: false, detail: 'còn 3 thẻ' })
+    p.cards.cache = newCard(NOW)
+    expect(dailyPlan(p, 3, NOW)[0]).toMatchObject({ done: false, detail: 'còn 3 từ' })
     p.days[dayKey(NOW)] = day({ learned: 5, games: 1 })
     expect(dailyPlan(p, 0, NOW).every((s) => s.done)).toBe(true)
   })
@@ -82,6 +86,13 @@ describe('extraIds', () => {
     expect(extraIds(p, 10, NOW)).toEqual(['queue', 'cache'])
     expect(extraIds(p, 1, NOW)).toEqual(['queue'])
   })
+
+  it('leaves out words seen in the last hour', () => {
+    const p = initialProgress()
+    p.cards.cache = { ...newCard(NOW), due: NOW + DAY, last: NOW - 5 * 60_000 }
+    p.cards.queue = { ...newCard(NOW), due: NOW + DAY, last: NOW - 2 * DAY }
+    expect(extraIds(p, 10, NOW)).toEqual(['queue'])
+  })
 })
 
 describe('store', () => {
@@ -101,5 +112,25 @@ describe('store', () => {
     practice('queue', false)
     expect(getProgress().cards.queue.due).toBeLessThanOrEqual(Date.now())
     expect(getProgress().cards.queue.ease).toBeLessThan(learned.ease)
+  })
+
+  it('does not reward a quick retry after a miss with a longer interval', () => {
+    gradeCard('schema', 2)
+    const learned = getProgress().cards.schema
+    practice('schema', false) // a slip in Merge Pairs: due again now
+    practice('schema', true) // matched a few seconds later
+    const after = getProgress().cards.schema
+    expect(after.interval).toBe(learned.interval)
+    expect(after.due).toBeLessThanOrEqual(Date.now())
+    // A real review clears it.
+    gradeCard('schema', 2)
+    expect(getProgress().cards.schema.interval).toBeGreaterThan(learned.interval)
+  })
+
+  it('does not count the first-learn quiz as a review', () => {
+    const before = getProgress().stats.reviews
+    gradeCard('deploy', 2, { firstLearn: true })
+    expect(getProgress().stats.reviews).toBe(before)
+    expect(getProgress().cards.deploy.interval).toBe(1)
   })
 })

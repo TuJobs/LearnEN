@@ -1,14 +1,15 @@
-import { BookOpen, Dumbbell, Eye, House, Repeat, RotateCcw } from 'lucide-react'
+import { BookOpen, Dumbbell, Eye, Gamepad2, House, Repeat, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { wordById } from '../data/words'
 import { AnswerInput, ContextView, Example, ExitButton, Kbd, ProgressBar, SpeakButton, Summary, VerdictLine, WordCard, sayWord } from '../components/ui'
 import { useHotkeys, useNow, useScrollTopOn } from '../lib/hooks'
+import { dailyPlan, planNext } from '../lib/gamify'
 import { dueIds, extraIds } from '../lib/pick'
 import { sfx } from '../lib/sfx'
 import { formatDue, formatInterval, newCard, nextInterval, type Grade } from '../lib/srs'
 import { getProgress, gradeCard, practice, useProgress } from '../lib/store'
 import { checkAnswer, parseExample, type Verdict } from '../lib/text'
-import type { Route } from '../routes'
+import { GAMES, type Route } from '../routes'
 
 const GRADES: { grade: Grade; label: string; cls: string }[] = [
   { grade: 0, label: 'Quên', cls: 'again' },
@@ -111,14 +112,19 @@ export function Review({ go }: { go: (r: Route) => void }) {
       }
       return
     }
+    // Every handled key is swallowed: otherwise the digit lands in the next card's answer box.
     if (extra) {
-      if (e.key === '1' || e.key === '2') gradeExtra(e.key === '2')
-      else if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === '1' || e.key === '2') {
+        e.preventDefault()
+        gradeExtra(e.key === '2')
+      } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
         gradeExtra(verdict !== 'wrong')
       }
-    } else if (/^[1-4]$/.test(e.key)) grade((Number(e.key) - 1) as Grade)
-    else if (e.key === 'Enter' || e.key === ' ') {
+    } else if (/^[1-4]$/.test(e.key)) {
+      e.preventDefault()
+      grade((Number(e.key) - 1) as Grade)
+    } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       grade(suggested)
     }
@@ -131,52 +137,67 @@ export function Review({ go }: { go: (r: Route) => void }) {
       .map((c) => c.due)
       .filter((t) => t > now)
     const nextDue = upcoming.length ? Math.min(...upcoming) : null
+    // Words just missed come back within minutes: worth waiting for, with a game meanwhile.
+    const soon = !due.length && nextDue !== null && nextDue - now < 10 * 60_000
+    // The summary already offers the plan's game as the next step: no second game button then.
+    const planRoute = planNext(dailyPlan(p, due.length, now))?.route
+    const planGame = GAMES.some((g) => g.route === planRoute)
     const finished = tally.done > 0
     return (
       <Summary
         icon={due.length ? '🔔' : finished ? (tally.again ? '✅' : '🏆') : '☕'}
         title={
           due.length
-            ? `Có ${due.length} thẻ cần ôn`
+            ? `Có ${due.length} từ cần ôn`
             : finished
               ? extra
-                ? `Đã ôn thêm ${tally.done} lượt!`
+                ? `Đã ôn thêm ${tally.done} từ!`
                 : 'Hoàn thành lượt ôn tập!'
-              : 'Không có thẻ nào đến hạn'
+              : 'Chưa có từ nào đến hạn ôn'
         }
         text={
           due.length
             ? 'Ôn ngay lúc này là đúng thời điểm nhất để nhớ lâu.'
-            : more.length
-              ? 'Các thẻ khác chưa tới hạn. Muốn luyện tiếp thì “Ôn thêm” — chọn từ bạn hay quên nhất và không làm xáo trộn lịch ôn.'
-              : 'Bạn chưa có từ nào để ôn — học vài từ mới trước nhé.'
+            : soon
+              ? 'Từ vừa trả lời sai sẽ quay lại rất sớm — trong lúc chờ, chơi một game cho nóng máy nhé.'
+              : more.length
+                ? 'Các từ khác chưa tới hạn. Muốn luyện tiếp thì “Ôn thêm” — chọn từ bạn hay quên nhất và không làm xáo trộn lịch ôn.'
+                : Object.keys(p.cards).length
+                  ? 'Bạn đã ôn hết rồi — học thêm vài từ mới nhé.'
+                  : 'Bạn chưa có từ nào để ôn — học vài từ mới trước nhé.'
         }
         stats={[
           ...(finished
             ? [
-                { value: tally.done, label: 'lượt ôn' },
+                { value: tally.done, label: 'từ đã ôn' },
                 { value: tally.again, label: 'lần “Quên”' },
               ]
             : []),
-          ...(nextDue && !due.length ? [{ value: formatDue(nextDue, now), label: 'thẻ tiếp theo đến hạn' }] : []),
+          ...(nextDue && !due.length ? [{ value: formatDue(nextDue, now), label: 'từ tiếp theo đến hạn' }] : []),
         ]}
         celebrate={finished && !extra && tally.again === 0 && !due.length}
       >
         {due.length > 0 ? (
           <button className="btn primary" onClick={() => start(due, false)}>
-            <Repeat size={16} /> Ôn tiếp {due.length} thẻ
+            <Repeat size={16} /> Ôn tiếp {due.length} từ
+          </button>
+        ) : soon && !planGame ? (
+          <button className="btn primary" onClick={() => go('arcade')}>
+            <Gamepad2 size={16} /> Chơi game trong lúc chờ
           </button>
         ) : more.length > 0 ? (
           <button className="btn primary" onClick={() => start(more, true)}>
             <Dumbbell size={16} /> Ôn thêm {more.length} từ
           </button>
         ) : null}
-        <button className={`btn ${due.length || more.length ? '' : 'primary'}`} onClick={() => go('learn')}>
-          <BookOpen size={16} /> Học từ mới
-        </button>
+        {planRoute !== 'learn' && (
+          <button className={`btn ${due.length || more.length ? '' : 'primary'}`} onClick={() => go('learn')}>
+            <BookOpen size={16} /> Học từ mới
+          </button>
+        )}
         {finished && (
           <button className="btn ghost" onClick={() => go('home')}>
-            <House size={16} /> Dashboard
+            <House size={16} /> Trang chủ
           </button>
         )}
       </Summary>
@@ -204,7 +225,11 @@ export function Review({ go }: { go: (r: Route) => void }) {
           </div>
           <div className="ipa">{word.ipa}</div>
           <p className="muted small hint">Nghĩ ra câu trả lời trong đầu, rồi lật thẻ để kiểm tra.</p>
-          <button className="btn primary" onClick={() => setFlipped(true)}>
+        </div>
+      )}
+      {!flipped && mode === 'recall' && (
+        <div className="dock">
+          <button className="btn primary big block" onClick={() => setFlipped(true)}>
             <RotateCcw size={16} /> Lật thẻ <Kbd>Space</Kbd>
           </button>
         </div>
@@ -213,10 +238,10 @@ export function Review({ go }: { go: (r: Route) => void }) {
       {mode === 'produce' && (
         <div className="card">
           <p className="prompt">
-            Từ tiếng Anh nào nghĩa là: <b className="text">{word.vi}</b>
+            Gõ từ tiếng Anh có nghĩa: <b className="text">{word.vi}</b>
           </p>
           <ContextView ctx={word.ctx}>
-            <Example text={word.ex} blank={<span className={`blank ${flipped ? 'filled' : ''}`}>{flipped ? target : '____'}</span>} />
+            <Example text={word.ex} blank={<span className={`blank ${flipped ? 'filled' : ''}`}>{flipped ? target : '\u00a0'}</span>} />
           </ContextView>
           <AnswerInput
             key={pos}
@@ -253,12 +278,12 @@ export function Review({ go }: { go: (r: Route) => void }) {
               <div className="field-label">Bạn còn nhớ từ này không?</div>
               <div className="grades two">
                 <button className={`grade again ${verdict === 'wrong' ? 'suggested' : ''}`} onClick={() => gradeExtra(false)}>
-                  <b>Chưa nhớ</b>
+                  <b>Quên</b>
                   <span className="small">ôn lại sau 1 phút</span>
                   <Kbd>1</Kbd>
                 </button>
                 <button className={`grade good ${verdict !== 'wrong' ? 'suggested' : ''}`} onClick={() => gradeExtra(true)}>
-                  <b>Nhớ rồi</b>
+                  <b>Nhớ</b>
                   <span className="small">giữ nguyên lịch ôn</span>
                   <Kbd>2</Kbd>
                 </button>
@@ -266,7 +291,9 @@ export function Review({ go }: { go: (r: Route) => void }) {
             </div>
           ) : (
             <div className="dock">
-              <div className="field-label">Bạn nhớ từ này thế nào?</div>
+              <div className="field-label">
+                Bạn nhớ từ này thế nào? <span className="muted">· ôn lại sau…</span>
+              </div>
               <div className="grades">
                 {GRADES.map((g) => (
                   <button
@@ -275,7 +302,7 @@ export function Review({ go }: { go: (r: Route) => void }) {
                     onClick={() => grade(g.grade)}
                   >
                     <b>{g.label}</b>
-                    <span className="small">ôn lại sau {formatInterval(nextInterval(card, g.grade))}</span>
+                    <span className="small interval">{formatInterval(nextInterval(card, g.grade))}</span>
                     <Kbd>{g.grade + 1}</Kbd>
                   </button>
                 ))}

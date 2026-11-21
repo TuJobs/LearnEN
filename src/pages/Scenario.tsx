@@ -74,6 +74,7 @@ export function Scenario() {
       e.preventDefault()
       next()
     } else if (!picked && /^[1-3]$/.test(e.key) && options[Number(e.key) - 1]) {
+      e.preventDefault()
       choose(options[Number(e.key) - 1])
     }
   })

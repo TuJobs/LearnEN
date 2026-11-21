@@ -5,7 +5,7 @@ import { SpeakButton, TopicPicker, WordCard, sayWord } from '../components/ui'
 import { inTopic, type TopicFilter } from '../lib/pick'
 import { MASTERY_LABEL, mastery } from '../lib/srs'
 import { useProgress } from '../lib/store'
-import { normalize } from '../lib/text'
+import { fold } from '../lib/text'
 
 export function Dictionary() {
   const p = useProgress()
@@ -13,8 +13,8 @@ export function Dictionary() {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<string | null>(null)
 
-  const q = normalize(query)
-  const list = WORDS.filter(inTopic(topic)).filter((w) => !q || normalize(w.word).includes(q) || normalize(w.vi).includes(q))
+  const q = fold(query)
+  const list = WORDS.filter(inTopic(topic)).filter((w) => !q || fold(w.word).includes(q) || fold(w.vi).includes(q))
   const toggle = (id: string) => setOpen(open === id ? null : id)
 
   return (

@@ -80,7 +80,7 @@ export function Bugs() {
       <GameIntro
         route="bugs"
         desc="Mỗi câu có đúng một bug — những lỗi tiếng Anh người Việt rất hay mắc khi chat, viết PR hay họp với khách."
-        steps={[`Click vào từ bị lỗi (có ${MAX_TRIES} lần thử).`, 'Xem bản sửa dạng diff và nghe câu đúng.', 'Đọc giải thích để không mắc lại lần sau.']}
+        steps={[`Bấm vào từ bị lỗi (được thử ${MAX_TRIES} lần).`, 'Xem bản sửa dạng diff và nghe câu đúng.', 'Đọc giải thích để không mắc lại lần sau.']}
       >
         <div>
           <button className="btn primary big" onClick={start}>
@@ -100,7 +100,7 @@ export function Bugs() {
         stats={[
           { value: `${items.length - score.misses}/${items.length}`, label: 'bug tìm ra ngay' },
           { value: `+${score.xp}`, label: 'XP' },
-          { value: `x${score.best}`, label: 'combo cao nhất' },
+          { value: `×${score.best}`, label: 'combo cao nhất' },
         ]}
         celebrate={perfect}
       >
@@ -114,7 +114,7 @@ export function Bugs() {
   return (
     <div className="card">
       <RoundHeader index={i} total={items.length} score={score} onExit={() => setItems(null)} />
-      <p className="prompt">Câu dưới đây có một lỗi — click vào chỗ sai:</p>
+      <p className="prompt">Câu này có đúng một lỗi — bấm vào từ sai:</p>
       <ContextView ctx={bug.ctx}>
         <span className="bug-line">
           {toks.map((t, k) => (

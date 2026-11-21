@@ -133,14 +133,6 @@ export function ColumnChart({
               </text>
             </g>
           ))}
-          {goal && (
-            <g>
-              <line className="viz-goal" x1={ml} x2={width - mr} y1={y(goal.value)} y2={y(goal.value)} />
-              <text className="viz-tick viz-halo" x={width - mr} y={y(goal.value) - 5} textAnchor="end">
-                {goal.label}
-              </text>
-            </g>
-          )}
           {data.map((d, i) => {
             const cx = ml + i * band + band / 2
             const label = showTick(i, data.length, band, anchor) && tick(d, i)
@@ -165,6 +157,15 @@ export function ColumnChart({
               </g>
             )
           })}
+          {/* Drawn after the bars so they never cut through it. */}
+          {goal && (
+            <g>
+              <line className="viz-goal" x1={ml} x2={width - mr} y1={y(goal.value)} y2={y(goal.value)} />
+              <text className="viz-tick viz-halo viz-goal-label" x={ml + 4} y={y(goal.value) - 6} textAnchor="start">
+                {goal.label}
+              </text>
+            </g>
+          )}
         </svg>
       )}
       {a && active !== null && (
@@ -234,15 +235,22 @@ export function LineChart({
               </text>
             </g>
           ))}
+          {/* Days without answers: a faint dashed bridge, so sparse data still reads as one trend. */}
+          {runs.slice(1).map((run, k) => {
+            const from = runs[k].at(-1)!
+            const to = run[0]
+            return (
+              <line key={`gap${to}`} className="viz-bridge" x1={x(from)} y1={y(data[from].value!)} x2={x(to)} y2={y(data[to].value!)} />
+            )
+          })}
           {runs.map((run) => {
             const pts = run.map((i) => `${x(i)},${y(data[i].value!)}`)
             return (
               <g key={run[0]}>
-                {run.length > 1 ? (
-                  <path className="viz-line" d={`M${pts.join('L')}`} />
-                ) : (
-                  <circle className="viz-dot" cx={x(run[0])} cy={y(data[run[0]].value!)} r={3} />
-                )}
+                {run.length > 1 && <path className="viz-line" d={`M${pts.join('L')}`} />}
+                {run.map((i) => (
+                  <circle key={i} className="viz-dot" cx={x(i)} cy={y(data[i].value!)} r={3} />
+                ))}
               </g>
             )
           })}

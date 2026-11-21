@@ -16,6 +16,6 @@
   "shortcuts": [
     { "name": "Ôn tập", "url": "./#/review" },
     { "name": "Học từ mới", "url": "./#/learn" },
-    { "name": "Vietglish Debugger", "url": "./#/bugs" }
+    { "name": "Bắt lỗi Vietglish", "url": "./#/bugs" }
   ]
 }

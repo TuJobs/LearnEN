@@ -14,12 +14,14 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { TOPICS, topicById } from '../data/topics'
-import { AUTO_NEXT_MS, useAutoAdvance, useScrollTopOn, type Score } from '../lib/hooks'
-import type { TopicFilter } from '../lib/pick'
+import { dailyPlan, planNext } from '../lib/gamify'
+import { AUTO_NEXT_MS, useAutoAdvance, useRoute, useScrollTopOn, type Score } from '../lib/hooks'
+import { dueIds, type TopicFilter } from '../lib/pick'
 import { sfx } from '../lib/sfx'
 import { speak } from '../lib/speech'
+import { useProgress } from '../lib/store'
 import { parseExample, plainExample, stripEmoji, type Verdict } from '../lib/text'
 import { navOf, type Route } from '../routes'
 import type { Ctx, Pos, Word } from '../types'
@@ -276,7 +278,7 @@ export function ComboPill({ combo }: { combo: number }) {
   if (combo < 2) return null
   return (
     <span key={combo} className="pill combo">
-      <Flame size={14} /> x{combo}
+      <Flame size={14} /> ×{combo}
     </span>
   )
 }
@@ -285,6 +287,9 @@ export function ComboPill({ combo }: { combo: number }) {
  * Typed answer with a visible "Kiểm tra" button. A correct answer is accepted the moment it is
  * typed (no Enter needed); anything else is checked with Enter or the button.
  */
+/** The "how auto-check works" hint is shown on the first few answers only, then it's noise. */
+let hintsLeft = 3
+
 export function AnswerInput({
   value,
   onChange,
@@ -294,6 +299,7 @@ export function AnswerInput({
   verdict,
   placeholder = 'Gõ đáp án…',
   label = 'Đáp án',
+  multiline = false,
 }: {
   value: string
   onChange: (v: string) => void
@@ -304,7 +310,27 @@ export function AnswerInput({
   verdict?: Verdict | null
   placeholder?: string
   label?: string
+  /** A two-line box for whole sentences (Enter still checks, Shift+Enter is ignored) */
+  multiline?: boolean
 }) {
+  const [showHint] = useState(() => hintsLeft-- > 0)
+  const field = {
+    className: `text-input ${verdict ?? ''}`,
+    autoFocus: true,
+    disabled: done,
+    value,
+    onChange: (e: { target: { value: string } }) => {
+      const v = e.target.value
+      onChange(v)
+      if (!done && accepts(v)) onSubmit(v)
+    },
+    placeholder,
+    'aria-label': label,
+    autoComplete: 'off',
+    autoCapitalize: 'off',
+    spellCheck: false,
+    enterKeyHint: 'go' as const,
+  }
   return (
     <form
       className="answer-form"
@@ -313,42 +339,51 @@ export function AnswerInput({
         if (!done) onSubmit(value)
       }}
     >
-      <div className="answer-row">
-        <input
-          className={`text-input ${verdict ?? ''}`}
-          autoFocus
-          disabled={done}
-          value={value}
-          onChange={(e) => {
-            const v = e.target.value
-            onChange(v)
-            if (!done && accepts(v)) onSubmit(v)
-          }}
-          placeholder={placeholder}
-          aria-label={label}
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          enterKeyHint="go"
-        />
+      <div className={`answer-row ${multiline ? 'multi' : ''}`}>
+        {multiline ? (
+          <textarea
+            {...field}
+            rows={2}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              if (!e.shiftKey && !done && value.trim()) onSubmit(value)
+            }}
+          />
+        ) : (
+          <input {...field} />
+        )}
         {!done && (
           <button type="submit" className="btn primary" disabled={!value.trim()}>
             <Check size={16} /> Kiểm tra
           </button>
         )}
       </div>
-      {!done && <p className="answer-hint">Gõ đúng là tự chấm — không cần nhấn Enter.</p>}
+      {!done && showHint && <p className="answer-hint">Gõ đúng là tự chấm luôn — chưa chắc thì bấm Kiểm tra.</p>}
     </form>
   )
 }
 
-/** "Next" button; with `auto` (after a correct answer) it fills up and moves on by itself. */
-export function NextButton({ onNext, auto, children = 'Tiếp' }: { onNext: () => void; auto?: boolean; children?: ReactNode }) {
+/**
+ * "Next" button; with `auto` (after a correct answer) it fills up and moves on by itself.
+ * After a wrong answer it turns neutral, so green keeps meaning "correct".
+ */
+export function NextButton({
+  onNext,
+  auto,
+  wrong,
+  children = 'Tiếp',
+}: {
+  onNext: () => void
+  auto?: boolean
+  wrong?: boolean
+  children?: ReactNode
+}) {
   useAutoAdvance(!!auto, onNext)
   return (
     <button
       type="button"
-      className={`btn primary next-btn ${auto ? 'auto' : ''}`}
+      className={`btn primary next-btn ${auto ? 'auto' : ''} ${wrong ? 'neutral' : ''}`}
       style={auto ? ({ '--auto-next': `${AUTO_NEXT_MS}ms` } as CSSProperties) : undefined}
       onClick={onNext}
     >
@@ -371,7 +406,7 @@ export function RoundHeader({ index, total, score, onExit }: { index: number; to
     <div className="round-head">
       <ProgressBar value={index / total} label="Tiến độ lượt chơi" />
       <span className="muted mono small">
-        {index}/{total}
+        {Math.min(index + 1, total)}/{total}
       </span>
       <XpPill score={score} />
       <ComboPill combo={score.combo} />
@@ -463,8 +498,36 @@ export function Summary({
           ))}
         </div>
       )}
-      <div className="row center">{children}</div>
+      <div className="row center">
+        <PlanNext />
+        {children}
+      </div>
     </div>
+  )
+}
+
+/**
+ * The daily plan's next step, so every summary leads on instead of only offering "play again".
+ * When it shows, it is the one primary action (the page's own buttons are demoted in CSS).
+ */
+function PlanNext() {
+  const p = useProgress()
+  const [route, go] = useRoute()
+  const steps = dailyPlan(p, dueIds(p).length)
+  const next = planNext(steps)
+  if (!next) {
+    return (
+      <p className="summary-goal">
+        <Check size={16} strokeWidth={3} /> Xong việc hôm nay — hẹn gặp lại ngày mai!
+      </p>
+    )
+  }
+  if (next.route === route) return null
+  const Icon = navOf(next.route).icon
+  return (
+    <button className="btn primary plan-next" onClick={() => go(next.route)}>
+      <Icon size={16} /> Tiếp theo: {next.label}
+    </button>
   )
 }
 

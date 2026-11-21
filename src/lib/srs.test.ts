@@ -47,6 +47,12 @@ describe('srs', () => {
     expect(mastery(forgot)).toBe('learning')
   })
 
+  it('does not count a miss while still learning as a lapse', () => {
+    const missed = review(newCard(NOW), 0, NOW)
+    expect(missed.lapses).toBe(0)
+    expect(review(missed, 0, NOW).lapses).toBe(0)
+  })
+
   it('never lets ease drop below 1.3', () => {
     let card = newCard(NOW)
     for (let i = 0; i < 20; i++) card = review(card, 0, NOW)
@@ -60,12 +66,24 @@ describe('srs', () => {
   })
 })
 
+describe('formatInterval', () => {
+  it('keeps Nhớ and Dễ apart even for long intervals', () => {
+    expect(formatInterval(8)).toBe('8 ngày')
+    expect(formatInterval(50)).toBe('50 ngày')
+    expect(formatInterval(65)).toBe('65 ngày')
+    expect(formatInterval(100)).toBe('3,3 tháng')
+    expect(formatInterval(120)).toBe('4 tháng')
+    expect(formatInterval(438)).toBe('1,2 năm')
+  })
+})
+
 describe('formatDue', () => {
   it('says when the next review is, in plain words', () => {
     expect(formatDue(NOW + 8 * 60_000, NOW)).toBe('sau 8 phút')
     expect(formatDue(NOW - 1, NOW)).toBe('ngay bây giờ')
     expect(formatDue(new Date(2026, 0, 10, 20, 5).getTime(), NOW)).toBe('hôm nay lúc 20:05')
-    expect(formatDue(new Date(2026, 0, 11, 4).getTime(), NOW)).toBe('ngày mai lúc 04:00')
-    expect(formatDue(new Date(2026, 0, 14, 4).getTime(), NOW)).toBe('14/1 lúc 04:00')
+    expect(formatDue(new Date(2026, 0, 11, 4).getTime(), NOW)).toBe('ngày mai')
+    expect(formatDue(new Date(2026, 0, 14, 4).getTime(), NOW)).toBe('sau 4 ngày (T4, 14/1)')
+    expect(formatDue(new Date(2026, 0, 11, 9, 30).getTime(), NOW)).toBe('ngày mai lúc 09:30')
   })
 })

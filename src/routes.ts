@@ -20,7 +20,7 @@ export interface NavItem {
   route: string
   icon: LucideIcon
   label: string
-  /** Short label for the mobile tab bar */
+  /** Short label for the mobile tab bar and the page title on phones */
   short?: string
   /** One-line pitch shown on game cards */
   desc?: string
@@ -29,17 +29,18 @@ export interface NavItem {
 }
 
 export const NAV = [
-  { route: 'home', icon: LayoutDashboard, label: 'Dashboard', short: 'Home' },
-  { route: 'learn', icon: BookOpen, label: 'Học từ mới', short: 'Học' },
+  // Navigation is in Vietnamese; English stays for the content and for dev jargon/game flavour.
+  { route: 'home', icon: LayoutDashboard, label: 'Trang chủ', short: 'Trang chủ' },
+  { route: 'learn', icon: BookOpen, label: 'Học từ mới', short: 'Từ mới' },
   { route: 'review', icon: Repeat, label: 'Ôn tập', short: 'Ôn tập' },
-  { route: 'arcade', icon: Gamepad2, label: 'Arcade', short: 'Game' },
-  { route: 'match', icon: GitMerge, label: 'Merge Pairs', tone: 'blue', desc: 'Ghép thuật ngữ với nghĩa, đua tốc độ và combo.' },
-  { route: 'cloze', icon: Puzzle, label: 'Code Cloze', tone: 'green', desc: 'Điền từ còn thiếu vào commit, PR, Slack, code comment.' },
-  { route: 'dictation', icon: Headphones, label: 'Listen & Type', tone: 'violet', desc: 'Nghe và gõ lại từ hoặc cả câu — luyện tai và chính tả.' },
-  { route: 'bugs', icon: Bug, label: 'Vietglish Debugger', tone: 'red', desc: 'Tìm lỗi tiếng Anh người Việt hay mắc trong câu.' },
-  { route: 'scenario', icon: MessagesSquare, label: 'Tình huống thực tế', tone: 'yellow', desc: 'Nhập vai stand-up, code review, phỏng vấn, báo sự cố.' },
-  { route: 'speak', icon: Mic, label: 'Phát âm chuẩn', tone: 'orange', desc: 'Sửa các từ dev Việt hay đọc sai, máy chấm giọng nói.' },
-  { route: 'builder', icon: Hammer, label: 'Sentence Compiler', tone: 'cyan', desc: 'Ráp từ thành câu đúng trật tự — chữa tật dịch từng chữ.' },
+  { route: 'arcade', icon: Gamepad2, label: 'Game', short: 'Game' },
+  { route: 'match', icon: GitMerge, label: 'Ghép cặp', tone: 'blue', desc: 'Ghép thuật ngữ với nghĩa, đua tốc độ và combo — resolve the merge conflict!' },
+  { route: 'cloze', icon: Puzzle, label: 'Điền từ', tone: 'green', desc: 'Điền từ còn thiếu vào commit, PR, Slack, code comment.' },
+  { route: 'dictation', icon: Headphones, label: 'Nghe & gõ', tone: 'violet', desc: 'Nghe và gõ lại từ hoặc cả câu — luyện tai và chính tả.' },
+  { route: 'bugs', icon: Bug, label: 'Bắt lỗi Vietglish', short: 'Bắt lỗi', tone: 'red', desc: 'Debug những lỗi tiếng Anh người Việt hay mắc trong câu.' },
+  { route: 'scenario', icon: MessagesSquare, label: 'Hội thoại', tone: 'yellow', desc: 'Nhập vai stand-up, code review, phỏng vấn, báo sự cố.' },
+  { route: 'speak', icon: Mic, label: 'Phát âm', tone: 'orange', desc: 'Sửa các từ dev Việt hay đọc sai, máy chấm giọng nói.' },
+  { route: 'builder', icon: Hammer, label: 'Ráp câu', tone: 'cyan', desc: 'Ráp từ thành câu đúng trật tự rồi Compile — chữa tật dịch từng chữ.' },
   { route: 'dict', icon: Library, label: 'Từ điển', short: 'Từ điển' },
   { route: 'stats', icon: ChartColumn, label: 'Thống kê' },
   { route: 'settings', icon: Settings, label: 'Cài đặt' },

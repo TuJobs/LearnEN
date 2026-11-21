@@ -42,10 +42,15 @@ export function distractors(word: Word, n: number): Word[] {
   return pool.filter((w) => !seen.has(w.vi) && seen.add(w.vi)).slice(0, n)
 }
 
-/** Learned cards that are not due yet, weakest first: extra practice once the reviews are done. */
+const HOUR = 60 * 60 * 1000
+
+/**
+ * Learned cards that are not due yet, weakest first: extra practice once the reviews are done.
+ * Words seen in the last hour are left out — drilling them again right away is massed practice.
+ */
 export function extraIds(p: Progress, n: number, now: number = Date.now()): string[] {
   return Object.entries(p.cards)
-    .filter(([, c]) => c.due > now)
+    .filter(([, c]) => c.due > now && now - c.last > HOUR)
     .sort(([, a], [, b]) => a.ease - b.ease || b.lapses - a.lapses || a.due - b.due)
     .slice(0, n)
     .map(([id]) => id)

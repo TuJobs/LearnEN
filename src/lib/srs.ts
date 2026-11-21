@@ -50,7 +50,8 @@ export function review(card: CardState, grade: Grade, now: number): CardState {
       ease: Math.max(MIN_EASE, card.ease - 0.2),
       interval: 0,
       reps: 0,
-      lapses: card.lapses + 1,
+      // Only forgetting a word you had already learned is a lapse, not missing it while learning.
+      lapses: card.lapses + (card.reps > 0 ? 1 : 0),
       due: now + MINUTE,
       last: now,
     }
@@ -85,24 +86,36 @@ export const MASTERY_LABEL: Record<Mastery, string> = {
   mature: 'Thành thạo',
 }
 
-/** When a review comes due, in words: "sau 8 phút", "ngày mai lúc 04:00"… */
+/** When a review comes due, in words: "sau 8 phút", "hôm nay lúc 20:05", "ngày mai", "sau 3 ngày (T4, 14/1)". */
 export function formatDue(due: number, now: number): string {
   const minutes = Math.ceil((due - now) / MINUTE)
   if (minutes <= 0) return 'ngay bây giờ'
   if (minutes < 60) return `sau ${minutes} phút`
   const at = new Date(due)
-  const hm = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
   const today = new Date(now)
   today.setHours(0, 0, 0, 0)
   const days = Math.floor((due - today.getTime()) / DAY)
+  // Day-level reviews all start when the review day does (04:00): the clock time means nothing.
+  const wholeDay = at.getHours() === DAY_STARTS_AT_HOUR && at.getMinutes() === 0 && at.getSeconds() === 0
+  if (wholeDay) {
+    if (days <= 1) return days === 1 ? 'ngày mai' : 'hôm nay'
+    return `sau ${days} ngày (${WEEKDAY[at.getDay()]}, ${at.getDate()}/${at.getMonth() + 1})`
+  }
+  const hm = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
   if (days === 0) return `hôm nay lúc ${hm}`
   if (days === 1) return `ngày mai lúc ${hm}`
   return `${at.getDate()}/${at.getMonth() + 1} lúc ${hm}`
 }
 
+const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+
+/** Vietnamese decimal: 1,5 — whole numbers stay whole. */
+const decimal = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ','))
+
+/** A review interval: "10 phút", "8 ngày", "3,3 tháng", "1,2 năm". Days up to ~3 months so Nhớ and Dễ never read the same. */
 export function formatInterval(days: number): string {
   if (days < 1) return `${Math.max(1, Math.round(days * 1440))} phút`
-  if (days < 30) return `${days} ngày`
-  if (days < 365) return `${Math.round(days / 30)} tháng`
-  return `${(days / 365).toFixed(1)} năm`
+  if (days < 100) return `${days} ngày`
+  if (days < 365) return `${decimal(Math.round(days / 3) / 10)} tháng`
+  return `${decimal(Math.round(days / 36.5) / 10)} năm`
 }

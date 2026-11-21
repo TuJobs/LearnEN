@@ -41,7 +41,6 @@ export function Stats({ go }: { go: (r: Route) => void }) {
   }))
 
   const answered = p.stats.correct + p.stats.wrong
-  const activeDays = Object.values(p.days).filter((d) => d.xp > 0).length
 
   return (
     <div className="stack">
@@ -52,9 +51,9 @@ export function Stats({ go }: { go: (r: Route) => void }) {
 
       <section className="stat-grid">
         <StatTile icon={Zap} tone="yellow" value={p.xp.toLocaleString('vi-VN')} label="tổng XP" />
-        <StatTile icon={Repeat} tone="blue" value={p.stats.reviews} label="lượt ôn tập" />
-        <StatTile icon={Flame} tone="orange" value={`${longestStreak(p.days)} ngày`} label={`chuỗi dài nhất · hiện tại ${streak(p.days)}`} />
-        <StatTile icon={Activity} tone="violet" value={answered ? `${Math.round((p.stats.correct / answered) * 100)}%` : '—'} label={`trả lời đúng · ${activeDays} ngày học`} />
+        <StatTile icon={Repeat} tone="blue" value={p.stats.reviews.toLocaleString('vi-VN')} label="lần ôn từ" />
+        <StatTile icon={Flame} tone="orange" value={`${longestStreak(p.days)} ngày`} label={`streak dài nhất (hiện tại: ${streak(p.days)})`} />
+        <StatTile icon={Activity} tone="violet" value={answered ? `${Math.round((p.stats.correct / answered) * 100)}%` : '–'} label="độ chính xác" />
       </section>
 
       <section className="card">
@@ -63,19 +62,19 @@ export function Stats({ go }: { go: (r: Route) => void }) {
         </SectionTitle>
         {cards.length ? (
           <>
-            <p className="muted small">Số thẻ đến hạn mỗi ngày. Ôn đều mỗi ngày để không bị dồn việc.</p>
+            <p className="muted small">Số từ đến hạn ôn mỗi ngày. Ôn đều mỗi ngày để không bị dồn việc.</p>
             <ColumnChart
               data={due}
-              title="Số thẻ đến hạn trong 14 ngày tới"
-              unit="thẻ"
+              title="Số từ đến hạn ôn trong 14 ngày tới"
+              unit="từ"
               anchor="start"
               labeled={[...new Set([0, peakDue])]}
               tick={(_, i) => (i === 0 ? 'Nay' : ddmm(due[i].date))}
             />
-            <ChartTable head={['Ngày', 'Số thẻ']} rows={due.map((d) => [d.label, d.value])} />
+            <ChartTable head={['Ngày', 'Số từ']} rows={due.map((d) => [d.label, d.value])} />
           </>
         ) : (
-          <Empty go={go} text="Chưa có thẻ nào trong lịch ôn — hãy học vài từ đầu tiên." />
+          <Empty go={go} text="Chưa có từ nào trong lịch ôn — hãy học vài từ đầu tiên." />
         )}
       </section>
 
@@ -102,12 +101,12 @@ export function Stats({ go }: { go: (r: Route) => void }) {
           <>
             <LineChart
               data={accuracy}
-              title="Tỉ lệ trả lời đúng mỗi ngày trong 30 ngày qua"
+              title="Độ chính xác mỗi ngày trong 30 ngày qua"
               max={100}
               format={(v) => `${v}%`}
               tick={(_, i) => ddmm(accuracy[i].date)}
             />
-            <ChartTable head={['Ngày', 'Trả lời đúng']} rows={accuracy.map((d) => [d.label, d.value === null ? '—' : `${d.value}%`])} />
+            <ChartTable head={['Ngày', 'Độ chính xác']} rows={accuracy.map((d) => [d.label, d.value === null ? '–' : `${d.value}%`])} />
           </>
         ) : (
           <Empty go={go} text="Chưa có câu trả lời nào trong 30 ngày qua." />
@@ -125,8 +124,8 @@ export function Stats({ go }: { go: (r: Route) => void }) {
         <ChartTable head={['Mức', 'Số từ']} rows={segments.map((s) => [s.label, s.value])} />
       </section>
 
-      <p className="muted small row">
-        <CalendarDays size={14} /> Dữ liệu chỉ lưu trên trình duyệt này — xuất file trong Cài đặt để sao lưu.
+      <p className="muted small footnote">
+        <CalendarDays size={14} /> <span>Dữ liệu chỉ lưu trên trình duyệt này — xuất file trong Cài đặt để sao lưu.</span>
       </p>
     </div>
   )

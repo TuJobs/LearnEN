@@ -19,6 +19,13 @@ export function normalize(s: string): string {
     .trim()
 }
 
+/** For search: also ignores Vietnamese tone marks, so "trien khai" finds "triển khai". */
+export const fold = (s: string) =>
+  normalize(s)
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/đ/g, 'd')
+
 /** Ignores spaces, hyphens and dots: "roll back" ≈ "rollback", "engine x" ≈ "enginex". */
 export const compact = (s: string) => normalize(s).replace(/[\s\-_.]/g, '')
 

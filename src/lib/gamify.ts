@@ -10,7 +10,7 @@ export const LEVELS = [
   { title: 'Intern', min: 0, icon: '🐣' },
   { title: 'Fresher', min: 150, icon: '🌱' },
   { title: 'Junior Dev', min: 500, icon: '💻' },
-  { title: 'Middle Dev', min: 1200, icon: '⚙️' },
+  { title: 'Middle Dev', min: 1200, icon: '🧑‍💻' },
   { title: 'Senior Dev', min: 2500, icon: '🚀' },
   { title: 'Tech Lead', min: 5000, icon: '🧭' },
   { title: 'Architect', min: 9000, icon: '🏛️' },
@@ -79,22 +79,38 @@ export interface PlanStep {
   label: string
   detail: string
   done: boolean
+  /** Nothing to do yet (e.g. no words to review before learning any): neither done nor next. */
+  idle?: boolean
 }
 
-/** Today's ~15-minute routine: clear due reviews → learn new words → one game (rotates daily). */
+/** Daily XP goals and roughly how long each takes. */
+export const GOALS = [
+  { xp: 30, label: 'Thong thả', minutes: 5 },
+  { xp: 50, label: 'Đều đặn', minutes: 10 },
+  { xp: 100, label: 'Nghiêm túc', minutes: 20 },
+]
+
+export const goalMinutes = (xp: number) => GOALS.find((g) => g.xp === xp)?.minutes ?? Math.round(xp / 5)
+
+/** The first step still to do, if any. */
+export const planNext = (steps: PlanStep[]) => steps.find((s) => !s.done && !s.idle)
+
+/** Today's routine: clear due reviews → learn new words → one game (rotates daily). */
 export function dailyPlan(p: Progress, dueCount: number, now: number = Date.now()): PlanStep[] {
   const key = dayKey(now)
   const learned = p.days[key]?.learned ?? 0
   const played = p.days[key]?.games ?? 0
   const goal = p.settings.newPerSession
-  const unlearned = WORDS.length - Object.keys(p.cards).length
+  const studied = Object.keys(p.cards).length
+  const unlearned = WORDS.length - studied
   const game = GAME_ROTATION[Math.floor(Date.parse(key) / DAY) % GAME_ROTATION.length]
   return [
     {
       route: 'review',
-      label: 'Ôn tập thẻ đến hạn',
-      detail: dueCount ? `còn ${dueCount} thẻ` : 'không còn thẻ nào',
-      done: dueCount === 0,
+      label: 'Ôn từ đến hạn',
+      detail: dueCount ? `còn ${dueCount} từ` : studied ? 'đã ôn hết' : 'chưa có từ nào để ôn',
+      done: dueCount === 0 && studied > 0,
+      idle: studied === 0,
     },
     {
       route: 'learn',

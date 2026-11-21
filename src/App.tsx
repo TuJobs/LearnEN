@@ -2,7 +2,7 @@ import { ChevronRight, Flame, Moon, Settings as SettingsIcon, Sun, Target } from
 import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ProgressBar } from './components/ui'
 import { levelOf, streak } from './lib/gamify'
-import { useMediaQuery, useNow, useRoute } from './lib/hooks'
+import { confirmLeave, useMediaQuery, useNow, useRoute } from './lib/hooks'
 import { dueIds } from './lib/pick'
 import { sfx } from './lib/sfx'
 import { updateSettings, useProgress } from './lib/store'
@@ -45,9 +45,9 @@ const Settings = lazy(chunks.settings)
 const prefetch = () => Object.values(chunks).forEach((load) => void load())
 
 const SIDEBAR: { section?: string; sectionRoute?: Route; items: Route[] }[] = [
-  { items: ['home', 'learn', 'review'] },
-  { section: 'Arcade', sectionRoute: 'arcade', items: GAMES.map((g) => g.route) },
-  { section: 'Khác', items: ['dict', 'stats', 'settings'] },
+  { items: ['home', 'learn', 'review', 'dict'] },
+  { section: 'Game', sectionRoute: 'arcade', items: GAMES.map((g) => g.route) },
+  { section: 'Cá nhân', items: ['stats', 'settings'] },
 ]
 
 export function App() {
@@ -55,6 +55,7 @@ export function App() {
   // Tapping the page you're already on starts it over (e.g. a finished review or game).
   const [visit, setVisit] = useState(0)
   const go = (r: Route) => {
+    if (!confirmLeave()) return
     if (r === route) {
       setVisit((v) => v + 1)
       window.scrollTo(0, 0)
@@ -68,7 +69,12 @@ export function App() {
   const today = p.days[dayKey()]?.xp ?? 0
   const prefersDark = useMediaQuery('(prefers-color-scheme: dark)')
   const theme = p.settings.theme === 'system' ? (prefersDark ? 'dark' : 'light') : p.settings.theme
-  const { icon: PageIcon, label: pageLabel } = navOf(route)
+  const { icon: PageIcon, label: pageLabel, short: pageShort } = navOf(route)
+
+  // "(3) Ôn tập · LearnEN": the tab says where you are and how many words wait.
+  useEffect(() => {
+    document.title = `${due ? `(${due}) ` : ''}${route === 'home' ? 'LearnEN — Tiếng Anh IT cho dev Việt' : `${pageLabel} · LearnEN`}`
+  }, [route, pageLabel, due])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -88,7 +94,7 @@ export function App() {
 
   const pages: Record<Route, ReactNode> = {
     home: <Dashboard go={go} />,
-    learn: <Learn go={go} />,
+    learn: <Learn />,
     review: <Review go={go} />,
     arcade: <Arcade go={go} />,
     match: <Match />,
@@ -107,6 +113,9 @@ export function App() {
 
   return (
     <div className="app">
+      <a className="skip-link" href="#main">
+        Bỏ qua tới nội dung
+      </a>
       <aside className="sidebar">
         <div className="brand">
           <img src="./favicon.svg" alt="" />
@@ -149,7 +158,7 @@ export function App() {
             <div>
               <b>{lvl.current.title}</b>
               <div className="muted small">
-                {p.xp} XP{lvl.next && ` / ${lvl.next.min}`}
+                {p.xp.toLocaleString('vi-VN')} XP{lvl.next && ` / ${lvl.next.min.toLocaleString('vi-VN')}`}
               </div>
             </div>
           </div>
@@ -157,20 +166,38 @@ export function App() {
         </button>
       </aside>
 
-      <main>
+      <main id="main" tabIndex={-1}>
         <header className="topbar">
           <div className="page-title">
             <PageIcon size={18} aria-hidden />
-            <h1>{pageLabel}</h1>
+            <h1>
+              <span className="title-full">{pageLabel}</span>
+              {pageShort && pageShort !== pageLabel && (
+                <span className="title-short" aria-hidden>
+                  {pageShort}
+                </span>
+              )}
+            </h1>
             <span className="path">~/learnen/{route}</span>
           </div>
           <div className="top-stats">
-            <span className={`pill ${today > 0 ? 'hot' : ''}`} title="Chuỗi ngày học liên tiếp">
+            {/* Both open the stats: on phones that is the only way there besides the dashboard. */}
+            <button
+              className={`pill ${today > 0 ? 'hot' : ''}`}
+              onClick={() => go('stats')}
+              title="Chuỗi ngày học liên tiếp — xem thống kê"
+              aria-label={`Chuỗi ${streak(p.days)} ngày học liên tiếp — xem thống kê`}
+            >
               <Flame size={15} /> {streak(p.days)}
-            </span>
-            <span className={`pill ${today >= p.settings.dailyGoal ? 'done' : ''}`} title="XP hôm nay / mục tiêu">
-              <Target size={15} /> {today}/{p.settings.dailyGoal}
-            </span>
+            </button>
+            <button
+              className={`pill ${today >= p.settings.dailyGoal ? 'done' : ''}`}
+              onClick={() => go('stats')}
+              title="XP hôm nay / mục tiêu — xem thống kê"
+              aria-label={`${today} trên ${p.settings.dailyGoal} XP hôm nay — xem thống kê`}
+            >
+              <Target size={15} /> {today}/{p.settings.dailyGoal} XP
+            </button>
             <span className="pill hide-sm" title={`${p.xp} XP`}>
               {lvl.current.icon} {lvl.current.title}
             </span>

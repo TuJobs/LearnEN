@@ -106,7 +106,7 @@ export function Cloze() {
         stats={[
           { value: `${words.length - score.misses}/${words.length}`, label: 'câu đúng' },
           { value: `+${score.xp}`, label: 'XP' },
-          { value: `x${score.best}`, label: 'combo cao nhất' },
+          { value: `×${score.best}`, label: 'combo cao nhất' },
         ]}
         celebrate={perfect}
       >
@@ -121,14 +121,24 @@ export function Cloze() {
   }
 
   const { target } = parseExample(word.ex)
+  // A word not studied yet can't be recalled: give its meaning so the round stays fair.
+  const unseen = !getProgress().cards[word.id]
   return (
     <div className="card">
       <RoundHeader index={i} total={words.length} score={score} onExit={() => setWords(null)} />
-      <p className="prompt">Điền từ còn thiếu:</p>
+      <p className="prompt">
+        Điền từ còn thiếu:
+        {unseen && (
+          <>
+            {' '}
+            <span className="pill new-word">Từ mới</span> nghĩa là <b className="text">{word.vi}</b>
+          </>
+        )}
+      </p>
       <ContextView ctx={word.ctx}>
         <Example
           text={word.ex}
-          blank={<span className={`blank ${result ? 'filled' : ''}`}>{result ? target : hint ? hintOf(target) : '_____'}</span>}
+          blank={<span className={`blank ${result ? 'filled' : hint ? 'hinted' : ''}`}>{result ? target : hint ? hintOf(target) : '\u00a0'}</span>}
         />
       </ContextView>
       <div className="wc-exvi">
@@ -148,7 +158,7 @@ export function Cloze() {
       />
       {!result && (
         <button className="btn ghost" onClick={() => setHint(true)} disabled={hint}>
-          <Lightbulb size={16} /> Gợi ý chữ cái đầu (−5 XP)
+          <Lightbulb size={16} /> Gợi ý chữ cái đầu (½ XP)
         </button>
       )}
       {result && (
@@ -164,7 +174,7 @@ export function Cloze() {
           <div className="muted small">
             <b className="text">{word.word}</b> <span className="ipa">{word.ipa}</span> — {word.vi}
           </div>
-          <NextButton onNext={next} auto={result.verdict === 'correct'} />
+          <NextButton onNext={next} auto={result.verdict === 'correct'} wrong={result.verdict === 'wrong'} />
         </div>
       )}
     </div>

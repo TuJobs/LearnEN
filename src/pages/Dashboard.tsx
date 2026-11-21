@@ -20,14 +20,15 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react'
+import { useState } from 'react'
 import { TOPICS } from '../data/topics'
 import { WORDS } from '../data/words'
 import { TOPIC_ICON } from '../components/icons'
 import { ProgressBar, SectionTitle, SpeakButton, StatTile, sayWord } from '../components/ui'
-import { BADGES, dailyPlan, levelOf, streak, type PlanStep } from '../lib/gamify'
+import { BADGES, GOALS, dailyPlan, goalMinutes, levelOf, planNext, streak, type PlanStep } from '../lib/gamify'
 import { dueIds } from '../lib/pick'
 import { DAY } from '../lib/srs'
-import { updateSettings, useProgress, type DayStat } from '../lib/store'
+import { requestLearnStart, updateSettings, useProgress, type DayStat } from '../lib/store'
 import { dayKey } from '../lib/text'
 import { navOf, type Route } from '../routes'
 
@@ -52,15 +53,19 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
   const lvl = levelOf(p.xp)
   const today = p.days[dayKey()]?.xp ?? 0
   const answered = p.stats.correct + p.stats.wrong
-  const accuracy = answered ? Math.round((p.stats.correct / answered) * 100) : 0
+  const accuracy = answered ? `${Math.round((p.stats.correct / answered) * 100)}%` : '–'
   const unlocked = BADGES.filter((b) => p.badges[b.id]).length
+  const [allBadges, setAllBadges] = useState(false)
+  const welcome = !p.settings.onboarded && cards.length === 0
+  // Earned badges, then the next few to aim for; the full wall is one tap away.
+  const shownBadges = allBadges ? BADGES : [...BADGES.filter((b) => p.badges[b.id]), ...BADGES.filter((b) => !p.badges[b.id]).slice(0, 3)]
   const leeches = WORDS.filter((w) => (p.cards[w.id]?.lapses ?? 0) >= 2)
     .sort((a, b) => p.cards[b.id].lapses - p.cards[a.id].lapses)
     .slice(0, 12)
 
   return (
     <div className="stack">
-      {!p.settings.onboarded && cards.length === 0 && <Welcome go={go} goal={p.settings.dailyGoal} batch={p.settings.newPerSession} />}
+      {welcome && <Welcome go={go} goal={p.settings.dailyGoal} batch={p.settings.newPerSession} />}
 
       <section className="card hero">
         <div className="hero-main">
@@ -70,7 +75,7 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
             <div>
               <h2 className="title">{lvl.current.title}</h2>
               <div className="muted small">
-                {lvl.next ? `Còn ${lvl.next.min - p.xp} XP để lên ${lvl.next.icon} ${lvl.next.title}` : 'Đỉnh cao sự nghiệp!'}
+                {lvl.next ? `Còn ${(lvl.next.min - p.xp).toLocaleString('vi-VN')} XP để lên ${lvl.next.icon} ${lvl.next.title}` : 'Đỉnh cao sự nghiệp!'}
               </div>
             </div>
           </div>
@@ -85,31 +90,31 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
             </div>
             <div className="mini-stat">
               <b>
-                <GoalRing value={today / p.settings.dailyGoal} /> {today}
+                <GoalRing value={today / p.settings.dailyGoal} /> {today}/{p.settings.dailyGoal}
               </b>
-              <span>/ {p.settings.dailyGoal} XP hôm nay</span>
+              <span>XP hôm nay</span>
             </div>
             <div className="mini-stat">
               <b>
                 <Repeat size={18} color="var(--accent)" /> {due}
               </b>
-              <span>thẻ đến hạn</span>
+              <span>từ cần ôn</span>
             </div>
           </div>
         </div>
-        <DailyPlan steps={dailyPlan(p, due)} go={go} />
+        <DailyPlan steps={dailyPlan(p, due)} go={go} minutes={goalMinutes(p.settings.dailyGoal)} hideCta={welcome} />
       </section>
 
       <section className="stat-grid">
         <StatTile icon={LibraryBig} tone="blue" value={`${cards.length}/${WORDS.length}`} label="từ đã học" />
         <StatTile icon={TreeDeciduous} tone="green" value={mature} label="từ thành thạo" />
-        <StatTile icon={Activity} tone="violet" value={`${accuracy}%`} label="tỉ lệ trả lời đúng" />
+        <StatTile icon={Activity} tone="violet" value={accuracy} label="độ chính xác" />
         <StatTile icon={Award} tone="yellow" value={`${unlocked}/${BADGES.length}`} label="huy hiệu" />
       </section>
 
       <section className="card">
         <SectionTitle icon={CalendarDays} aside={`${countActive(p.days)} ngày học trong ${WEEKS} tuần`}>
-          Contribution graph
+          Lịch sử học
         </SectionTitle>
         <Heatmap days={p.days} goal={p.settings.dailyGoal} />
         <button className="btn ghost" onClick={() => go('stats')}>
@@ -151,7 +156,7 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
       {leeches.length > 0 && (
         <section className="card">
           <SectionTitle icon={Bandage}>Từ hay quên</SectionTitle>
-          <p className="muted small">Những từ bạn quên từ 2 lần trở lên — được ưu tiên trong ôn tập và mini-game. Bấm để nghe lại.</p>
+          <p className="muted small">Những từ bạn đã quên 2 lần trở lên — được ưu tiên khi ôn tập và chơi game. Bấm để nghe lại.</p>
           <div className="chips" style={{ margin: '12px 0 14px' }}>
             {leeches.map((w) => (
               <button key={w.id} className="chip" onClick={() => sayWord(w)} title={w.vi}>
@@ -160,7 +165,7 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
             ))}
           </div>
           <button className="btn" onClick={() => go('cloze')}>
-            Luyện ngay với Code Cloze <ChevronRight size={16} />
+            Luyện ngay với {navOf('cloze').label} <ChevronRight size={16} />
           </button>
         </section>
       )}
@@ -170,7 +175,7 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
           Huy hiệu
         </SectionTitle>
         <div className="badges">
-          {BADGES.map((b) => {
+          {shownBadges.map((b) => {
             const on = !!p.badges[b.id]
             return (
               <div key={b.id} className={`badge ${on ? 'on' : ''}`} title={b.desc}>
@@ -182,8 +187,14 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
             )
           })}
         </div>
+        {shownBadges.length < BADGES.length || allBadges ? (
+          <button className="btn ghost" onClick={() => setAllBadges(!allBadges)} aria-expanded={allBadges}>
+            {allBadges ? 'Thu gọn' : `Xem cả ${BADGES.length} huy hiệu`} <ChevronRight size={16} className={allBadges ? 'rot-up' : ''} />
+          </button>
+        ) : null}
       </section>
 
+      {cards.length < 20 && (
       <section className="card">
         <SectionTitle icon={Sparkles}>Vì sao cách học này hiệu quả?</SectionTitle>
         <div className="methods">
@@ -198,20 +209,19 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
           ))}
         </div>
       </section>
+      )}
     </div>
   )
 }
 
-const GOALS = [
-  { xp: 30, label: 'Thong thả', time: '~5 phút' },
-  { xp: 50, label: 'Đều đặn', time: '~10 phút' },
-  { xp: 100, label: 'Nghiêm túc', time: '~20 phút' },
-]
-
 function Welcome({ go, goal, batch }: { go: (r: Route) => void; goal: number; batch: number }) {
-  const finish = (route?: Route) => {
+  const finish = (learn?: boolean) => {
     updateSettings({ onboarded: true })
-    if (route) go(route)
+    if (learn) {
+      // Straight into the first words: no second intro screen to click through.
+      requestLearnStart()
+      go('learn')
+    }
   }
   return (
     <section className="card welcome">
@@ -222,7 +232,7 @@ function Welcome({ go, goal, batch }: { go: (r: Route) => void; goal: number; ba
         <img src="./favicon.svg" alt="" />
         <div>
           <h2 className="title">Chào mừng tới LearnEN 👋</h2>
-          <p className="muted">Tiếng Anh IT cho dev Việt — mỗi ngày khoảng 15 phút, nhớ lâu nhờ ôn đúng lúc.</p>
+          <p className="muted">Tiếng Anh IT cho dev Việt — mỗi ngày 5–20 phút, nhớ lâu nhờ ôn đúng lúc.</p>
         </div>
       </div>
       <ol className="howto">
@@ -232,16 +242,24 @@ function Welcome({ go, goal, batch }: { go: (r: Route) => void; goal: number; ba
       </ol>
       <div>
         <div className="field-label">Mục tiêu mỗi ngày</div>
-        <div className="segmented" role="radiogroup" aria-label="Mục tiêu mỗi ngày">
+        <div className="segmented stacked block" role="radiogroup" aria-label="Mục tiêu mỗi ngày">
           {GOALS.map((g) => (
-            <button key={g.xp} role="radio" aria-checked={goal === g.xp} className={goal === g.xp ? 'active' : ''} onClick={() => updateSettings({ dailyGoal: g.xp })}>
-              {g.label} · {g.time}
+            <button
+              key={g.xp}
+              role="radio"
+              aria-checked={goal === g.xp}
+              className={goal === g.xp ? 'active' : ''}
+              onClick={() => updateSettings({ dailyGoal: g.xp })}
+              title={`${g.xp} XP mỗi ngày`}
+            >
+              {g.label}
+              <small>~{g.minutes} phút</small>
             </button>
           ))}
         </div>
       </div>
       <div className="row">
-        <button className="btn primary big" onClick={() => finish('learn')}>
+        <button className="btn primary big" onClick={() => finish(true)}>
           <Play size={18} fill="currentColor" /> Học {batch} từ đầu tiên
         </button>
         <button className="btn ghost" onClick={() => finish()}>
@@ -268,20 +286,21 @@ function WordOfDay() {
   )
 }
 
-function DailyPlan({ steps, go }: { steps: PlanStep[]; go: (r: Route) => void }) {
-  const next = steps.find((s) => !s.done)
+function DailyPlan({ steps, go, minutes, hideCta }: { steps: PlanStep[]; go: (r: Route) => void; minutes: number; hideCta?: boolean }) {
+  const next = planNext(steps)
+  const started = steps.some((s) => s.done)
   return (
     <div className="plan">
       <div className="row spread">
-        <h3>Bài học hôm nay</h3>
-        <span className="muted small">~15 phút</span>
+        <h3>Việc hôm nay</h3>
+        <span className="muted small">~{minutes} phút</span>
       </div>
       <ol className="plan-steps">
         {steps.map((s) => {
           const Icon = navOf(s.route).icon
           return (
             <li key={s.route}>
-              <button className={s.done ? 'done' : s === next ? 'current' : ''} onClick={() => go(s.route)}>
+              <button className={s.done ? 'done' : s === next ? 'current' : s.idle ? 'idle' : ''} onClick={() => go(s.route)}>
                 <span className="plan-check">{s.done ? <Check size={16} strokeWidth={3} /> : <Icon size={16} />}</span>
                 <span className="plan-label">{s.label}</span>
                 <span className="muted small">{s.detail}</span>
@@ -292,14 +311,16 @@ function DailyPlan({ steps, go }: { steps: PlanStep[]; go: (r: Route) => void })
         })}
       </ol>
       {next ? (
-        <button className="btn primary big block" onClick={() => go(next.route)}>
-          <Play size={18} fill="currentColor" /> Tiếp tục: {next.label}
-        </button>
+        !hideCta && (
+          <button className="btn primary big block" onClick={() => go(next.route)}>
+            <Play size={18} fill="currentColor" /> {started ? 'Làm tiếp' : 'Bắt đầu'}: {next.label}
+          </button>
+        )
       ) : (
         <div className="verdict correct">
           <Check size={18} />
           <div className="verdict-text">
-            <b className="verdict-label">Xong bài học hôm nay! 🎉</b> Hẹn gặp lại ngày mai để giữ streak.
+            <b className="verdict-label">Xong việc hôm nay! 🎉</b> Hẹn gặp lại ngày mai để giữ streak.
           </div>
         </div>
       )}

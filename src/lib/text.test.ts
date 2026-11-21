@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkAnswer, levenshtein, matchTokens, parseExample, tokenizeBug, tokens } from './text'
+import { checkAnswer, fold, levenshtein, matchTokens, parseExample, tokenizeBug, tokens } from './text'
 
 describe('parseExample', () => {
   it('splits around the bracketed target', () => {
@@ -44,5 +44,13 @@ describe('tokenizeBug', () => {
   it('flags every token overlapping the bug', () => {
     const toks = tokenizeBug('Can you check for me this bug?', 'for me')
     expect(toks.filter((t) => t.buggy).map((t) => t.text)).toEqual(['for', 'me'])
+  })
+})
+
+describe('fold', () => {
+  it('matches Vietnamese typed without tone marks', () => {
+    expect(fold('Triển khai')).toBe('trien khai')
+    expect(fold('Đăng nhập')).toBe('dang nhap')
+    expect(fold('cache')).toBe('cache')
   })
 })

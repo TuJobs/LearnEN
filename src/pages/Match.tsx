@@ -50,7 +50,8 @@ export function Match() {
     if (!next.left || !next.right) return setSel(next)
 
     if (next.left === next.right) {
-      const { gained, next: s } = hit(10)
+      // Recognition is quick and easy: half the XP of typing the word from memory.
+      const { gained, next: s } = hit(5)
       practice(next.left, true, gained)
       const done = [...matched, next.left]
       setMatched(done)
@@ -99,7 +100,7 @@ export function Match() {
           { value: `${elapsed}s`, label: 'thời gian' },
           { value: `+${score.xp}`, label: 'XP' },
           { value: score.misses, label: 'lần ghép sai' },
-          { value: `x${score.best}`, label: 'combo cao nhất' },
+          { value: `×${score.best}`, label: 'combo cao nhất' },
         ]}
         celebrate={perfect}
       >

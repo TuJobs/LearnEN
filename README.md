@@ -22,24 +22,24 @@ npm run build    # build production vào thư mục dist/
 | Phương pháp | Áp dụng trong app |
 | --- | --- |
 | **Spaced Repetition** (lặp lại ngắt quãng) | Thuật toán SM-2 (như Anki) nhắc lại mỗi từ đúng lúc bạn sắp quên: 1 → 3 → 8 → 20 → 50 ngày… |
-| **Active Recall** (chủ động nhớ lại) | Bạn phải tự gõ ra từ chứ không chỉ nhìn đáp án: Code Cloze, ôn tập chiều Việt → Anh, Listen & Type |
+| **Active Recall** (chủ động nhớ lại) | Bạn phải tự gõ ra từ chứ không chỉ nhìn đáp án: Điền từ, ôn tập chiều Việt → Anh, Nghe & gõ |
 | **Học trong ngữ cảnh** | Mỗi câu ví dụ được hiển thị như code comment, git commit, PR review, tin nhắn Slack, error log… |
-| **Học từ lỗi sai** | *Vietglish Debugger*: “debug” những lỗi tiếng Anh người Việt hay mắc (`I will off tomorrow`, `discuss about`, `can't login`…) |
+| **Học từ lỗi sai** | *Bắt lỗi Vietglish*: “debug” những lỗi tiếng Anh người Việt hay mắc (`I will off tomorrow`, `discuss about`, `can't login`…) |
 | **Đa giác quan** | Nghe phát âm, đọc IPA, gõ chính tả, nói vào micro và được máy chấm |
 | **Gamification** | XP, combo, streak, contribution graph kiểu GitHub, huy hiệu, lên cấp từ Intern → CTO |
 
 ## Các chế độ
 
-- **📋 Bài học hôm nay** — lộ trình ~15 phút trên Dashboard: ôn thẻ đến hạn → học từ mới → chơi một game (đổi game mỗi ngày). Chỉ cần bấm “Tiếp tục”.
+- **📋 Việc hôm nay** — lộ trình 5–20 phút (theo mục tiêu) trên Trang chủ: ôn từ đến hạn → học từ mới → chơi một game (đổi game mỗi ngày). Mỗi màn tổng kết đều chỉ sẵn bước tiếp theo.
 - **📖 Học từ mới** — mỗi lượt 5 từ: thẻ từ (IPA, nghĩa, ví dụ trong ngữ cảnh, mẹo nhớ, lỗi phát âm hay gặp) → trắc nghiệm Anh → Việt → tự gõ Việt → Anh.
 - **🔁 Ôn tập (SRS)** — ôn đúng những từ đến hạn, xen kẽ hai chiều; tự chấm Quên / Khó / Nhớ / Dễ, có hiển thị lần ôn kế tiếp.
-- **🔀 Merge Pairs** — ghép thuật ngữ với nghĩa, tính giờ và combo.
-- **🧩 Code Cloze** — điền từ còn thiếu vào câu thật trong môi trường làm việc.
-- **🎧 Listen & Type** — nghe và gõ lại từ hoặc cả câu, có so sánh từng chữ.
-- **🐛 Vietglish Debugger** — click vào chỗ sai trong câu, xem diff `-`/`+` và giải thích.
-- **🎭 Tình huống thực tế** — hội thoại nhập vai: daily stand-up, code review, báo sự cố cho khách hàng, phỏng vấn.
-- **🎙️ Phát âm chuẩn** — các từ dev Việt hay đọc sai (`cache`, `queue`, `schema`, `Nginx`, `suite`…), nghe mẫu và nói thử.
-- **🔨 Sentence Compiler** — ráp các ô từ thành câu tiếng Anh đúng trật tự từ câu tiếng Việt; chữa tật “dịch từng chữ”.
+- **🔀 Ghép cặp** — ghép thuật ngữ với nghĩa, tính giờ và combo.
+- **🧩 Điền từ** — điền từ còn thiếu vào câu thật trong môi trường làm việc.
+- **🎧 Nghe & gõ** — nghe và gõ lại từ hoặc cả câu, có so sánh từng chữ (thiếu mạo từ cũng bị chỉ ra).
+- **🐛 Bắt lỗi Vietglish** — bấm vào chỗ sai trong câu, xem diff `-`/`+` và giải thích.
+- **🎭 Hội thoại** — hội thoại nhập vai: daily stand-up, code review, báo sự cố cho khách hàng, phỏng vấn.
+- **🎙️ Phát âm** — các từ dev Việt hay đọc sai (`cache`, `queue`, `schema`, `Nginx`, `suite`…), nghe mẫu và nói thử.
+- **🔨 Ráp câu** — ráp các ô từ thành câu tiếng Anh đúng trật tự từ câu tiếng Việt; chữa tật “dịch từng chữ”.
 - **📚 Từ điển** — tra cứu, lọc theo chủ đề, xem trạng thái ghi nhớ của từng từ.
 - **📊 Thống kê** — dự báo số thẻ cần ôn 14 ngày tới, XP và độ chính xác 30 ngày, phân bố mức ghi nhớ (mỗi biểu đồ có bản dạng bảng).
 
@@ -55,7 +55,7 @@ Hầu hết màn hình dùng được hoàn toàn bằng bàn phím: `Enter`, `S
 
 ## Lộ trình gợi ý: 15 phút mỗi ngày
 
-Mục **Bài học hôm nay** trên Dashboard dẫn bạn qua đúng ba bước này:
+Mục **Việc hôm nay** trên Trang chủ dẫn bạn qua đúng ba bước này:
 
 1. **5 phút** — Ôn tập tất cả thẻ đến hạn (ưu tiên số 1, đừng bỏ qua).
 2. **5 phút** — Học 5 từ mới.
@@ -87,7 +87,7 @@ src/
 │   ├── text.ts      # Chấm đáp án (cho phép gõ sai nhẹ), so khớp câu
 │   ├── speech.ts    # Text-to-speech (tự chọn giọng tự nhiên nhất) & nhận diện giọng nói
 │   ├── pick.ts      # Chọn từ cho game: từ đến hạn → từ đã học → từ mới, từ yếu trước
-│   ├── builder.ts   # Tách câu thành ô từ, chấm trật tự (Sentence Compiler)
+│   ├── builder.ts   # Tách câu thành ô từ, chấm trật tự (Ráp câu)
 │   ├── stats.ts     # Dự báo ôn tập, chuỗi dài nhất, phân bố mức ghi nhớ
 │   ├── sfx.ts       # Âm thanh phản hồi tổng hợp bằng Web Audio
 │   └── pwa.ts       # Đăng ký service worker, nút cài app
@@ -107,7 +107,7 @@ Thêm một object vào chủ đề tương ứng trong `src/data/words.ts`. T�
   ex: 'PUT requests should be [idempotent].',
   exVi: 'Request PUT nên có tính idempotent.',
   tip: 'GET, PUT, DELETE là idempotent; POST thì không.',
-  // Tuỳ chọn — để từ xuất hiện trong mục Phát âm chuẩn:
+  // Tuỳ chọn — để từ xuất hiện trong mục Phát âm:
   wrong: 'i-đem-pô-tần', sound: 'ai-đầm-PÂU-tần',
 },
 ```

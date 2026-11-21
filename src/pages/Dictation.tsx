@@ -52,15 +52,16 @@ export function Dictation() {
       verdict = checkAnswer(value, [word.word])
     } else {
       hits = matchTokens(tokens(answer), tokens(value))
+      // Every word counts: a missing article ("an", "the") is exactly the mistake to notice.
       const ratio = hits.filter(Boolean).length / hits.length
-      verdict = ratio >= 0.9 ? 'correct' : ratio >= 0.6 ? 'close' : 'wrong'
+      verdict = ratio === 1 ? 'correct' : ratio >= 0.6 ? 'close' : 'wrong'
     }
     if (verdict === 'wrong') {
       miss()
       practice(word.id, false)
     } else {
       const base = mode === 'sentence' ? 15 : 10
-      const { gained } = hit(verdict === 'correct' && !showHint ? base : base / 2)
+      const { gained } = hit(verdict === 'correct' && !showHint ? base : Math.ceil(base / 2))
       practice(word.id, true, gained)
     }
     setResult({ verdict, hits })
@@ -92,8 +93,8 @@ export function Dictation() {
     return (
       <GameIntro
         route="dictation"
-        desc="Nghe và gõ lại chính xác. Luyện cùng lúc tai nghe, chính tả và phát âm — đeo tai nghe để tập trung hơn."
-        steps={['Bấm nút loa để nghe (nghe chậm bằng nút con ốc).', 'Gõ lại chính xác những gì nghe được.', 'Chế độ “cả câu” chấm theo từng từ.']}
+        desc="Nghe và gõ lại chính xác — luyện tai và chính tả cùng lúc. Đeo tai nghe để tập trung hơn."
+        steps={['Âm thanh tự phát; bấm loa để nghe lại, bấm con ốc để nghe chậm.', 'Gõ lại chính xác những gì nghe được.', 'Chế độ “cả câu” chấm từng từ — thiếu cả mạo từ a/an/the cũng bị tính.']}
       >
         <div>
           <div className="field-label">Chế độ</div>
@@ -125,7 +126,7 @@ export function Dictation() {
         stats={[
           { value: `${words.length - score.misses}/${words.length}`, label: 'lượt đúng' },
           { value: `+${score.xp}`, label: 'XP' },
-          { value: `x${score.best}`, label: 'combo cao nhất' },
+          { value: `×${score.best}`, label: 'combo cao nhất' },
         ]}
         celebrate={perfect}
       >
@@ -151,7 +152,7 @@ export function Dictation() {
           <SpeakButton slow onSpeak={() => speak(audio, 0.55)} />
           {!result && !showHint && (
             <button className="btn ghost" onClick={() => setShowHint(true)}>
-              <Lightbulb size={16} /> Gợi ý nghĩa (−50% XP)
+              <Lightbulb size={16} /> Gợi ý nghĩa (½ XP)
             </button>
           )}
         </div>
@@ -171,10 +172,11 @@ export function Dictation() {
         verdict={result?.verdict}
         placeholder={mode === 'word' ? 'Gõ từ bạn nghe được…' : 'Gõ cả câu bạn nghe được…'}
         label="Những gì bạn nghe được"
+        multiline={mode === 'sentence'}
       />
       {result && (
         <div className="after" ref={revealRef}>
-          <VerdictLine verdict={result.verdict} />
+          <VerdictLine verdict={result.verdict}>{result.hits && missingArticles(answerTokens, result.hits)}</VerdictLine>
           {result.hits ? (
             <p className="diff">
               {answerTokens.map((t, k) => (
@@ -191,9 +193,17 @@ export function Dictation() {
           <p className="wc-exvi small">
             <span className="lang">VI</span> {mode === 'word' ? word.vi : word.exVi}
           </p>
-          <NextButton onNext={next} auto={result.verdict === 'correct'} />
+          <NextButton onNext={next} auto={result.verdict === 'correct'} wrong={result.verdict === 'wrong'} />
         </div>
       )}
     </div>
   )
+}
+
+const ARTICLES = new Set(['a', 'an', 'the'])
+
+/** Names the classic Vietnamese-speaker slip: "Thiếu mạo từ ‘an’." */
+function missingArticles(answer: string[], hits: boolean[]): string | null {
+  const missed = [...new Set(answer.filter((t, k) => !hits[k] && ARTICLES.has(t.toLowerCase())).map((t) => t.toLowerCase()))]
+  return missed.length ? `Thiếu mạo từ ${missed.map((t) => `‘${t}’`).join(', ')}.` : null
 }

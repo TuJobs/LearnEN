@@ -11,7 +11,7 @@ export function Arcade({ go }: { go: (r: Route) => void }) {
   return (
     <div className="stack">
       <div>
-        <h2 className="title">Arcade</h2>
+        <h2 className="title">Game</h2>
         <p className="muted">Vừa chơi vừa học: mỗi game luyện một kỹ năng khác nhau và ưu tiên những từ bạn hay quên.</p>
       </div>
       <div className="game-grid">
@@ -19,7 +19,7 @@ export function Arcade({ go }: { go: (r: Route) => void }) {
           <button key={route} className="card game-card" onClick={() => go(route)}>
             {route === todaysGame && (
               <span className="game-tag">
-                <Star size={12} fill="currentColor" /> Hôm nay
+                <Star size={12} fill="currentColor" /> Game hôm nay
               </span>
             )}
             <span className={`icon-tile lg tone-${tone}`}>

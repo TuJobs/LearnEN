@@ -1,6 +1,7 @@
 import { CircleCheck, Database, Download, Monitor, Moon, Palette, Play, Smartphone, Sun, Target, Trash2, Upload, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useId, useState, type ChangeEvent, type ReactNode } from 'react'
 import { SectionTitle } from '../components/ui'
+import { GOALS } from '../lib/gamify'
 import { isStandalone, promptInstall, useCanInstall } from '../lib/pwa'
 import { englishVoices, onVoicesChanged, speak } from '../lib/speech'
 import { exportProgress, importProgress, resetProgress, updateSettings, useProgress } from '../lib/store'
@@ -42,11 +43,13 @@ export function Settings() {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
+    if (!confirm('Khôi phục từ file này? Toàn bộ tiến độ hiện tại trên máy này sẽ bị thay thế.')) return
     try {
       importProgress(await file.text())
       toast('✅ Đã khôi phục tiến độ')
-    } catch (err) {
-      toast(`❌ ${err instanceof Error ? err.message : 'Không đọc được file'}`)
+    } catch {
+      // Parser messages are English and unhelpful: say what to do instead.
+      toast('❌ Không đọc được file. Hãy chọn đúng file .json đã xuất từ LearnEN.')
     }
   }
 
@@ -66,9 +69,11 @@ export function Settings() {
         <Setting label="XP mỗi ngày" hint="Đạt mục tiêu để vòng tròn hôm nay chuyển xanh.">
           {(id) => (
             <select id={id} value={settings.dailyGoal} onChange={(e) => updateSettings({ dailyGoal: Number(e.target.value) })}>
-              <option value={30}>30 XP — Thong thả (~5 phút)</option>
-              <option value={50}>50 XP — Đều đặn (~10 phút)</option>
-              <option value={100}>100 XP — Nghiêm túc (~20 phút)</option>
+              {GOALS.map((g) => (
+                <option key={g.xp} value={g.xp}>
+                  {g.xp} XP — {g.label} (~{g.minutes} phút)
+                </option>
+              ))}
               <option value={200}>200 XP — Hardcore (~40 phút)</option>
             </select>
           )}
@@ -159,7 +164,7 @@ export function Settings() {
             className={settings.theme === 'system' ? 'active' : ''}
             onClick={() => updateSettings({ theme: 'system' })}
           >
-            <Monitor size={15} /> Theo hệ thống
+            <Monitor size={15} /> Hệ thống
           </button>
         </div>
       </section>
@@ -179,8 +184,8 @@ export function Settings() {
           </>
         ) : (
           <p className="muted small">
-            Sau khi build và deploy, LearnEN chạy được offline và cài được như app: trên Chrome/Edge bấm biểu tượng cài đặt ở thanh
-            địa chỉ; trên iPhone mở bằng Safari → Chia sẻ → <b>Thêm vào MH chính</b>.
+            Cài LearnEN lên màn hình chính để mở nhanh như app và học cả khi không có mạng. Trên iPhone: mở bằng Safari → Chia sẻ →{' '}
+            <b>Thêm vào MH chính</b>. Trên Chrome/Edge: bấm biểu tượng cài đặt ở thanh địa chỉ.
           </p>
         )}
       </section>
@@ -190,10 +195,10 @@ export function Settings() {
         <p className="muted small">Tiến độ được lưu trong trình duyệt (localStorage). Xuất file để sao lưu hoặc chuyển sang máy khác.</p>
         <div className="row" style={{ marginTop: 12 }}>
           <button className="btn" onClick={download}>
-            <Download size={16} /> Xuất tiến độ
+            <Download size={16} /> Xuất file sao lưu
           </button>
           <label className="btn">
-            <Upload size={16} /> Nhập tiến độ
+            <Upload size={16} /> Khôi phục từ file
             <input type="file" accept="application/json" hidden onChange={upload} />
           </label>
           <button className="btn danger" onClick={reset}>

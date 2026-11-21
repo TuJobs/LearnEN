@@ -64,6 +64,7 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
       e.preventDefault()
       next()
     } else if (!answer && task.kind === 'choice' && /^[1-4]$/.test(e.key)) {
+      e.preventDefault()
       const opt = options[Number(e.key) - 1]
       if (opt) resolve(opt.id === task.word.id ? 'correct' : 'wrong', opt.id)
     }
@@ -81,7 +82,7 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
 
       {task.kind === 'choice' ? (
         <>
-          <p className="prompt center">Nghĩa của từ này là gì?</p>
+          <p className="prompt center">Từ này nghĩa là gì?</p>
           <div className="big-word">
             {task.word.word} <SpeakButton solid onSpeak={() => sayWord(task.word)} />
           </div>
@@ -118,7 +119,7 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
           <ContextView ctx={task.word.ctx}>
             <Example
               text={task.word.ex}
-              blank={<span className={`blank ${answer ? 'filled' : ''}`}>{answer ? target : '____'}</span>}
+              blank={<span className={`blank ${answer ? 'filled' : ''}`}>{answer ? target : '\u00a0'}</span>}
             />
           </ContextView>
           <AnswerInput
@@ -143,7 +144,7 @@ export function Quiz({ words, onDone, onExit }: { words: Word[]; onDone: (firstT
               </>
             )}
           </VerdictLine>
-          <NextButton onNext={next} auto={answer.verdict === 'correct'}>
+          <NextButton onNext={next} auto={answer.verdict === 'correct'} wrong={answer.verdict === 'wrong'}>
             Tiếp tục
           </NextButton>
         </div>

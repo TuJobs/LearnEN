@@ -103,7 +103,7 @@ export function Builder() {
       <GameIntro
         route="builder"
         desc="Ráp các từ thành câu tiếng Anh đúng trật tự — chữa tật “dịch từng chữ” từ tiếng Việt."
-        steps={['Đọc câu tiếng Việt cần nói.', 'Chạm các ô từ theo đúng thứ tự (chạm lại để bỏ).', 'Bấm Compile — đúng trật tự thì build pass!']}
+        steps={['Đọc câu tiếng Việt cần dịch.', 'Bấm các ô từ theo đúng thứ tự (bấm lần nữa để bỏ).', 'Bấm Compile — đúng trật tự thì build pass!']}
       >
         <TopicPicker value={topic} onChange={setTopic} />
         <div>
@@ -126,7 +126,7 @@ export function Builder() {
             ? [
                 { value: `${rounds.length - score.misses}/${rounds.length}`, label: 'câu đúng' },
                 { value: `+${score.xp}`, label: 'XP' },
-                { value: `x${score.best}`, label: 'combo cao nhất' },
+                { value: `×${score.best}`, label: 'combo cao nhất' },
               ]
             : []
         }
@@ -146,7 +146,7 @@ export function Builder() {
   return (
     <div className="card">
       <RoundHeader index={i} total={rounds.length} score={score} onExit={() => setRounds(null)} />
-      <p className="prompt">Nói câu này bằng tiếng Anh:</p>
+      <p className="prompt">Ráp câu này bằng tiếng Anh:</p>
       <div className="build-prompt">
         <span className="lang">VI</span>
         <span>{round.prompt}</span>
@@ -156,7 +156,7 @@ export function Builder() {
         <span className="build-caret" aria-hidden>
           &gt;
         </span>
-        {built.length === 0 && <span className="muted small">Chạm vào các từ bên dưới theo đúng thứ tự…</span>}
+        {built.length === 0 && <span className="muted small">Bấm các từ bên dưới theo đúng thứ tự…</span>}
         {built.map((id, k) => (
           <button
             key={id}
@@ -202,7 +202,7 @@ export function Builder() {
               <SpeakButton onSpeak={() => speak(sentenceOf(round))} title="Nghe câu đúng" />
             </div>
           </div>
-          <NextButton onNext={next} auto={result} />
+          <NextButton onNext={next} auto={result} wrong={!result} />
         </div>
       )}
     </div>

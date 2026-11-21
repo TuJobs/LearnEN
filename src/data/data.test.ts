@@ -36,4 +36,13 @@ describe('scenarios', () => {
       for (const step of s.steps) expect(step.options.filter((o) => o.score === 2)).toHaveLength(1)
     }
   })
+
+  it('does not let length give away the best answer', () => {
+    const steps = SCENARIOS.flatMap((s) => s.steps)
+    const bestIsLongest = steps.filter((step) => {
+      const best = step.options.find((o) => o.score === 2)!
+      return step.options.every((o) => o === best || best.text.length > o.text.length)
+    })
+    expect(bestIsLongest.length / steps.length).toBeLessThanOrEqual(0.4)
+  })
 })

@@ -159,11 +159,15 @@ function answered(s: Progress, ok: boolean, xp: number, update?: { id: string; c
   }
 }
 
-/** A real spaced-repetition review (review screen, or the end of a learning session). */
-export function gradeCard(id: string, grade: Grade) {
+/**
+ * A real spaced-repetition review. `firstLearn` marks the quiz at the end of "Học từ mới": it
+ * schedules the word but isn't counted as a review in the stats (or the "First Commit" badge).
+ */
+export function gradeCard(id: string, grade: Grade, { firstLearn = false } = {}) {
   const now = Date.now()
   const card = review(state.cards[id] ?? newCard(now), grade, now)
-  commit(answered(state, grade > 0, XP_FOR_GRADE[grade], { id, card, review: true }))
+  missedAt.delete(id)
+  commit(answered(state, grade > 0, XP_FOR_GRADE[grade], { id, card, review: !firstLearn }))
 }
 
 /**
@@ -171,18 +175,28 @@ export function gradeCard(id: string, grade: Grade) {
  * word due again right away, and a correct answer counts as a review only if the word is already
  * due (otherwise intervals would inflate). Unstudied words just earn XP — they join the review
  * schedule through "Học từ mới", so games never flood the review queue.
+ *
+ * A word missed in a game stays due until it is reviewed properly: getting it right a few
+ * seconds later (e.g. the second try in Merge Pairs) must not count as an on-time review,
+ * or a slip would push the next review further out.
  */
 export function practice(id: string, ok: boolean, xp = 0) {
   const now = Date.now()
   const prev = state.cards[id]
   if (!prev) return commit(answered(state, ok, xp))
+  if (!ok) missedAt.set(id, now)
+  const recentlyMissed = now - (missedAt.get(id) ?? -Infinity) < MISS_MEMORY
   const card = !ok
     ? { ...prev, due: Math.min(prev.due, now), ease: Math.max(1.3, prev.ease - 0.1) }
-    : prev.due <= now
+    : prev.due <= now && !recentlyMissed
       ? review(prev, 2, now)
       : prev
   commit(answered(state, ok, xp, { id, card, review: false }))
 }
+
+/** Words missed in a game, and when: they wait for a real review instead of a quick retry. */
+const missedAt = new Map<string, number>()
+const MISS_MEMORY = 60 * 60 * 1000
 
 export function addXP(xp: number) {
   commit({ ...state, xp: state.xp + xp, days: addToday(state, { xp }) })
@@ -225,4 +239,15 @@ export function importProgress(json: string) {
     throw new Error('File không đúng định dạng tiến độ LearnEN.')
   }
   commit(hydrate(data))
+}
+
+/** One-shot request from the welcome card: open "Học từ mới" straight into the first words. */
+let learnStartRequested = false
+export const requestLearnStart = () => {
+  learnStartRequested = true
+}
+export function takeLearnStart(): boolean {
+  const requested = learnStartRequested
+  learnStartRequested = false
+  return requested
 }

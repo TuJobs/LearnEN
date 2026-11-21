@@ -1,17 +1,16 @@
-import { ArrowLeft, ArrowRight, Puzzle, Repeat, Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowLeft, ArrowRight, Zap } from 'lucide-react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { WORDS } from '../data/words'
 import { Quiz } from '../components/Quiz'
 import { ExitButton, GameIntro, Kbd, ProgressBar, Summary, TopicPicker, WordCard, sayWord } from '../components/ui'
-import { useHotkeys, useScrollTopOn } from '../lib/hooks'
+import { confirmLeave, useHotkeys, useLeaveGuard, useScrollTopOn } from '../lib/hooks'
 import { inTopic, type TopicFilter } from '../lib/pick'
-import { addXP, gradeCard, useProgress } from '../lib/store'
-import type { Route } from '../routes'
+import { addXP, gradeCard, takeLearnStart, useProgress } from '../lib/store'
 import type { Word } from '../types'
 
 type Phase = 'pick' | 'study' | 'quiz' | 'done'
 
-export function Learn({ go }: { go: (r: Route) => void }) {
+export function Learn() {
   const p = useProgress()
   const [topic, setTopic] = useState<TopicFilter>('all')
   const [phase, setPhase] = useState<Phase>('pick')
@@ -25,6 +24,18 @@ export function Learn({ go }: { go: (r: Route) => void }) {
   useEffect(() => {
     if (phase === 'study' && word) sayWord(word)
   }, [phase, word])
+
+  // Coming from the welcome card: skip this intro and show the first words right away.
+  useLayoutEffect(() => {
+    if (takeLearnStart()) start()
+  }, [])
+
+  const inSession = phase === 'study' || phase === 'quiz'
+  const leaveText = `Dừng học? ${batch.length} từ vừa xem sẽ chưa được lưu vào lịch ôn.`
+  useLeaveGuard(inSession, leaveText)
+  const exit = () => {
+    if (confirmLeave()) setPhase('pick')
+  }
 
   function start() {
     setBatch(fresh(topic).slice(0, p.settings.newPerSession))
@@ -40,7 +51,7 @@ export function Learn({ go }: { go: (r: Route) => void }) {
   function finish(firstTry: Record<string, boolean>) {
     // The quiz counts as the first review: right on the first try → see it again tomorrow,
     // otherwise it is due again in a minute.
-    batch.forEach((w) => gradeCard(w.id, firstTry[w.id] ? 2 : 0))
+    batch.forEach((w) => gradeCard(w.id, firstTry[w.id] ? 2 : 0, { firstLearn: true }))
     addXP(10)
     setScore(batch.filter((w) => firstTry[w.id]).length)
     setPhase('done')
@@ -64,7 +75,7 @@ export function Learn({ go }: { go: (r: Route) => void }) {
           <span className="muted mono small">
             {i + 1}/{batch.length}
           </span>
-          <ExitButton onExit={() => setPhase('pick')} label="Dừng học" />
+          <ExitButton onExit={exit} label="Dừng học" />
         </div>
         <WordCard key={word.id} word={word} />
         <div className="row spread dock">
@@ -90,7 +101,7 @@ export function Learn({ go }: { go: (r: Route) => void }) {
     )
   }
 
-  if (phase === 'quiz') return <Quiz words={batch} onDone={finish} onExit={() => setPhase('pick')} />
+  if (phase === 'quiz') return <Quiz words={batch} onDone={finish} onExit={exit} />
 
   if (phase === 'done') {
     const perfect = score === batch.length
@@ -101,18 +112,12 @@ export function Learn({ go }: { go: (r: Route) => void }) {
         text="Từ đúng ngay sẽ được nhắc lại vào ngày mai; từ sai sẽ quay lại trong phần Ôn tập sau 1 phút."
         stats={[
           { value: `${score}/${batch.length}`, label: 'đúng ngay lần đầu' },
-          { value: Object.keys(p.cards).length, label: 'từ trong bộ nhớ' },
+          { value: Object.keys(p.cards).length, label: 'từ đã học' },
         ]}
         celebrate={perfect}
       >
         <button className="btn primary" onClick={start} disabled={!fresh(topic).length}>
           Học tiếp {p.settings.newPerSession} từ
-        </button>
-        <button className="btn" onClick={() => go('review')}>
-          <Repeat size={16} /> Ôn tập
-        </button>
-        <button className="btn" onClick={() => go('cloze')}>
-          <Puzzle size={16} /> Code Cloze
         </button>
       </Summary>
     )
@@ -126,7 +131,7 @@ export function Learn({ go }: { go: (r: Route) => void }) {
       steps={[
         'Xem thẻ từ: nghe phát âm, đọc ví dụ trong ngữ cảnh và mẹo nhớ.',
         'Chọn nghĩa đúng của từng từ (nhận diện).',
-        'Tự gõ lại từ tiếng Anh từ nghĩa tiếng Việt (nhớ chủ động).',
+        'Nhìn nghĩa tiếng Việt, tự gõ ra từ tiếng Anh (nhớ chủ động).',
       ]}
     >
       <TopicPicker value={topic} onChange={setTopic} count={(t) => fresh(t).length} />

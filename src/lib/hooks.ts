@@ -135,3 +135,24 @@ export function useScore() {
     reset: () => setScore(ZERO),
   }
 }
+
+let leaveMessage: string | null = null
+
+/**
+ * While `active` (a session that would be lost), leaving through the navigation or closing the
+ * tab asks first. Pages call `confirmLeave()` for their own exit buttons.
+ */
+export function useLeaveGuard(active: boolean, message: string) {
+  useEffect(() => {
+    if (!active) return
+    leaveMessage = message
+    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault()
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => {
+      leaveMessage = null
+      window.removeEventListener('beforeunload', onBeforeUnload)
+    }
+  }, [active, message])
+}
+
+export const confirmLeave = () => !leaveMessage || window.confirm(leaveMessage)

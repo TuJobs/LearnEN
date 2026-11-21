@@ -1,4 +1,4 @@
-import { Check, CircleCheck, Mic, MicOff, X } from 'lucide-react'
+import { ArrowRight, Check, CircleCheck, Mic, MicOff, X } from 'lucide-react'
 import { useState } from 'react'
 import { WORDS } from '../data/words'
 import { GameIntro, Note, ProgressBar, SpeakButton, VerdictLine, sayWord } from '../components/ui'
@@ -12,10 +12,10 @@ import type { Word } from '../types'
 const TRICKY = WORDS.filter((w) => w.wrong)
 
 const ERRORS: Record<string, string> = {
-  'not-allowed': 'Trình duyệt chưa được cấp quyền micro.',
+  'not-allowed': 'Chưa có quyền dùng micro — bấm biểu tượng ổ khoá trên thanh địa chỉ, cho phép Micro rồi thử lại.',
   'no-speech': 'Không nghe thấy gì, hãy nói to và rõ hơn nhé.',
   network: 'Nhận diện giọng nói cần kết nối Internet.',
-  'audio-capture': 'Không tìm thấy micro.',
+  'audio-capture': 'Không tìm thấy micro — kiểm tra tai nghe hoặc micro đã cắm chưa.',
 }
 
 function isMatch(w: Word, heard: string[]): boolean {
@@ -38,6 +38,13 @@ export function Speak() {
     setResult(null)
     setError('')
     sayWord(w)
+  }
+
+  /** The next word not read correctly yet (wrapping around), so nobody has to scroll the list. */
+  function nextWord() {
+    const start = TRICKY.indexOf(word)
+    const order = [...TRICKY.slice(start + 1), ...TRICKY.slice(0, start + 1)]
+    select(order.find((w) => !passed.includes(w.id)) ?? order[0])
   }
 
   async function record() {
@@ -113,7 +120,14 @@ export function Speak() {
               Máy nghe được: “{result.heard}”
             </VerdictLine>
           )}
-          {error && <VerdictLine verdict="wrong" label="Lỗi">{error}</VerdictLine>}
+          {error && (
+            <VerdictLine verdict="wrong" label="Chưa nghe được">
+              {error}
+            </VerdictLine>
+          )}
+          <button className={`btn ${result?.ok ? 'primary' : ''}`} onClick={nextWord}>
+            Từ tiếp <ArrowRight size={16} />
+          </button>
         </div>
 
         <div className="card">
