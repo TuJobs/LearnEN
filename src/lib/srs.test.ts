@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatInterval, mastery, newCard, nextInterval, review } from './srs'
+import { formatDue, formatInterval, mastery, newCard, nextInterval, review } from './srs'
 
 const NOW = new Date(2026, 0, 10, 15, 0).getTime()
 
@@ -57,5 +57,15 @@ describe('srs', () => {
     const card = { ...newCard(NOW), reps: 3, interval: 10 }
     expect(nextInterval(card, 1)).toBeLessThan(nextInterval(card, 2))
     expect(nextInterval(card, 2)).toBeLessThan(nextInterval(card, 3))
+  })
+})
+
+describe('formatDue', () => {
+  it('says when the next review is, in plain words', () => {
+    expect(formatDue(NOW + 8 * 60_000, NOW)).toBe('sau 8 phút')
+    expect(formatDue(NOW - 1, NOW)).toBe('ngay bây giờ')
+    expect(formatDue(new Date(2026, 0, 10, 20, 5).getTime(), NOW)).toBe('hôm nay lúc 20:05')
+    expect(formatDue(new Date(2026, 0, 11, 4).getTime(), NOW)).toBe('ngày mai lúc 04:00')
+    expect(formatDue(new Date(2026, 0, 14, 4).getTime(), NOW)).toBe('14/1 lúc 04:00')
   })
 })

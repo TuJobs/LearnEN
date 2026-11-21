@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { dailyPlan, levelOf, streak } from './gamify'
-import { pickWords } from './pick'
+import { extraIds, pickWords } from './pick'
 import { pickVoice } from './speech'
 import { DAY, newCard } from './srs'
 import { getProgress, gradeCard, initialProgress, practice, type DayStat } from './store'
@@ -70,6 +70,17 @@ describe('pickWords', () => {
     p.cards.array = { ...newCard(NOW), due: NOW + 5 * DAY, ease: 1.3 }
     expect(pickWords(p, 'all', 3, { now: NOW }).map((w) => w.id).sort()).toEqual(['array', 'cache', 'queue'])
     expect(pickWords(p, 'all', 1, { now: NOW }).map((w) => w.id)).toEqual(['cache'])
+  })
+})
+
+describe('extraIds', () => {
+  it('offers learned cards that are not due yet, weakest first', () => {
+    const p = initialProgress()
+    p.cards.cache = { ...newCard(NOW), due: NOW + DAY, ease: 2.5 }
+    p.cards.queue = { ...newCard(NOW), due: NOW + 2 * DAY, ease: 1.6 }
+    p.cards.array = { ...newCard(NOW), due: NOW - DAY, ease: 1.3 } // due: belongs to the normal review
+    expect(extraIds(p, 10, NOW)).toEqual(['queue', 'cache'])
+    expect(extraIds(p, 1, NOW)).toEqual(['queue'])
   })
 })
 

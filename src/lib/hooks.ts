@@ -64,6 +64,16 @@ export function useReveal<T extends HTMLElement>(trigger: unknown) {
   return ref
 }
 
+/** The current time, refreshed every `ms` so time-based views (what is due) update on their own. */
+export function useNow(ms: number): number {
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), ms)
+    return () => clearInterval(t)
+  }, [ms])
+  return now
+}
+
 /** How long a correct answer stays on screen before moving on by itself. */
 export const AUTO_NEXT_MS = 1400
 

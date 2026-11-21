@@ -1287,6 +1287,9 @@ mark {
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
+.grades.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .grade {
   --tone: var(--accent);
   display: flex;
@@ -2809,6 +2812,9 @@ mark {
   .dock .grades {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
+  }
+  .dock .grades.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .dock .grade {
     min-height: 58px;

@@ -85,6 +85,21 @@ export const MASTERY_LABEL: Record<Mastery, string> = {
   mature: 'Thành thạo',
 }
 
+/** When a review comes due, in words: "sau 8 phút", "ngày mai lúc 04:00"… */
+export function formatDue(due: number, now: number): string {
+  const minutes = Math.ceil((due - now) / MINUTE)
+  if (minutes <= 0) return 'ngay bây giờ'
+  if (minutes < 60) return `sau ${minutes} phút`
+  const at = new Date(due)
+  const hm = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
+  const today = new Date(now)
+  today.setHours(0, 0, 0, 0)
+  const days = Math.floor((due - today.getTime()) / DAY)
+  if (days === 0) return `hôm nay lúc ${hm}`
+  if (days === 1) return `ngày mai lúc ${hm}`
+  return `${at.getDate()}/${at.getMonth() + 1} lúc ${hm}`
+}
+
 export function formatInterval(days: number): string {
   if (days < 1) return `${Math.max(1, Math.round(days * 1440))} phút`
   if (days < 30) return `${days} ngày`

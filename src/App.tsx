@@ -1,8 +1,8 @@
 import { ChevronRight, Flame, Moon, Settings as SettingsIcon, Sun, Target } from 'lucide-react'
-import { Suspense, lazy, useEffect, useRef, type ReactNode } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ProgressBar } from './components/ui'
 import { levelOf, streak } from './lib/gamify'
-import { useMediaQuery, useRoute } from './lib/hooks'
+import { useMediaQuery, useNow, useRoute } from './lib/hooks'
 import { dueIds } from './lib/pick'
 import { sfx } from './lib/sfx'
 import { updateSettings, useProgress } from './lib/store'
@@ -51,7 +51,17 @@ const SIDEBAR: { section?: string; sectionRoute?: Route; items: Route[] }[] = [
 ]
 
 export function App() {
-  const [route, go] = useRoute()
+  const [route, goRoute] = useRoute()
+  // Tapping the page you're already on starts it over (e.g. a finished review or game).
+  const [visit, setVisit] = useState(0)
+  const go = (r: Route) => {
+    if (r === route) {
+      setVisit((v) => v + 1)
+      window.scrollTo(0, 0)
+    } else goRoute(r)
+  }
+  // Keeps time-based counts (cards due) fresh without any user action.
+  useNow(30_000)
   const p = useProgress()
   const due = dueIds(p).length
   const lvl = levelOf(p.xp)
@@ -178,7 +188,7 @@ export function App() {
           </div>
         </header>
 
-        <div className="page" key={route}>
+        <div className="page" key={`${route}:${visit}`}>
           <Suspense fallback={<p className="muted">Đang tải…</p>}>{pages[route]}</Suspense>
         </div>
       </main>

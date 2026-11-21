@@ -1,12 +1,12 @@
-import { BookOpen, Eye, GitMerge, House, RotateCcw } from 'lucide-react'
+import { BookOpen, Dumbbell, Eye, House, Repeat, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { wordById } from '../data/words'
 import { AnswerInput, ContextView, Example, ExitButton, Kbd, ProgressBar, SpeakButton, Summary, VerdictLine, WordCard, sayWord } from '../components/ui'
-import { useHotkeys, useScrollTopOn } from '../lib/hooks'
-import { dueIds } from '../lib/pick'
+import { useHotkeys, useNow, useScrollTopOn } from '../lib/hooks'
+import { dueIds, extraIds } from '../lib/pick'
 import { sfx } from '../lib/sfx'
-import { formatInterval, newCard, nextInterval, type Grade } from '../lib/srs'
-import { getProgress, gradeCard, useProgress } from '../lib/store'
+import { formatDue, formatInterval, newCard, nextInterval, type Grade } from '../lib/srs'
+import { getProgress, gradeCard, practice, useProgress } from '../lib/store'
 import { checkAnswer, parseExample, type Verdict } from '../lib/text'
 import type { Route } from '../routes'
 
@@ -19,9 +19,16 @@ const GRADES: { grade: Grade; label: string; cls: string }[] = [
 
 const SUGGESTED: Record<Verdict, Grade> = { correct: 2, close: 1, wrong: 0 }
 
+/** Cards per "Ôn thêm" round. */
+const EXTRA_SIZE = 10
+
 export function Review({ go }: { go: (r: Route) => void }) {
   const p = useProgress()
+  // Re-evaluate what is due while the page stays open (e.g. a card forgotten a minute ago).
+  const now = useNow(15_000)
   const [queue, setQueue] = useState(() => dueIds(getProgress()))
+  /** Extra practice on cards that aren't due: it never pushes their schedule further out. */
+  const [extra, setExtra] = useState(false)
   const [pos, setPos] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [input, setInput] = useState('')
@@ -39,17 +46,43 @@ export function Review({ go }: { go: (r: Route) => void }) {
     if (word && mode === 'recall') sayWord(word)
   }, [word, mode])
 
+  function start(ids: string[], asExtra: boolean) {
+    setQueue(ids)
+    setExtra(asExtra)
+    setPos(0)
+    setFlipped(false)
+    setInput('')
+    setVerdict(null)
+    setTally({ done: 0, again: 0 })
+  }
+
+  function advance(forgot: boolean) {
+    if (!id) return
+    setTally((t) => ({ done: t.done + 1, again: t.again + (forgot ? 1 : 0) }))
+    setPos(pos + 1)
+    setFlipped(false)
+    setInput('')
+    setVerdict(null)
+  }
+
   function grade(g: Grade) {
     if (!id || !card) return
     // Cards due again within minutes (Again, or Hard while still learning) come back this session.
     const comesBackToday = nextInterval(card, g) < 1
     gradeCard(id, g)
-    setTally((t) => ({ done: t.done + 1, again: t.again + (g === 0 ? 1 : 0) }))
     if (comesBackToday) setQueue((q) => [...q, id])
-    setPos(pos + 1)
-    setFlipped(false)
-    setInput('')
-    setVerdict(null)
+    advance(g === 0)
+  }
+
+  /** Extra practice: forgetting is a real lapse; remembering keeps the schedule as it is. */
+  function gradeExtra(remembered: boolean) {
+    if (!id) return
+    if (remembered) practice(id, true, 5)
+    else {
+      gradeCard(id, 0)
+      setQueue((q) => [...q, id])
+    }
+    advance(!remembered)
   }
 
   function reveal(v: Verdict) {
@@ -78,51 +111,74 @@ export function Review({ go }: { go: (r: Route) => void }) {
       }
       return
     }
-    if (/^[1-4]$/.test(e.key)) grade((Number(e.key) - 1) as Grade)
+    if (extra) {
+      if (e.key === '1' || e.key === '2') gradeExtra(e.key === '2')
+      else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        gradeExtra(verdict !== 'wrong')
+      }
+    } else if (/^[1-4]$/.test(e.key)) grade((Number(e.key) - 1) as Grade)
     else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       grade(suggested)
     }
   })
 
-  if (!queue.length) {
-    const upcoming = Object.values(p.cards).map((c) => c.due)
-    const nextDue = upcoming.length ? new Date(Math.min(...upcoming)) : null
-    return (
-      <Summary
-        icon="☕"
-        title="Không có thẻ nào đến hạn"
-        text="Ôn đúng lúc quan trọng hơn ôn nhiều — trong lúc chờ, hãy học thêm từ mới hoặc chơi một game."
-        stats={nextDue ? [{ value: nextDue.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }), label: 'lượt ôn tiếp theo' }] : []}
-      >
-        <button className="btn primary" onClick={() => go('learn')}>
-          <BookOpen size={16} /> Học từ mới
-        </button>
-        <button className="btn" onClick={() => go('match')}>
-          <GitMerge size={16} /> Merge Pairs
-        </button>
-      </Summary>
-    )
-  }
-
   if (!word || !card) {
+    const due = dueIds(p, now)
+    const more = extraIds(p, EXTRA_SIZE, now)
+    const upcoming = Object.values(p.cards)
+      .map((c) => c.due)
+      .filter((t) => t > now)
+    const nextDue = upcoming.length ? Math.min(...upcoming) : null
+    const finished = tally.done > 0
     return (
       <Summary
-        icon={tally.again ? '✅' : '🏆'}
-        title="Hoàn thành lượt ôn tập!"
-        text={tally.again ? 'Quên rồi nhớ lại chính là cách bộ não ghi nhớ — những thẻ đó sẽ quay lại sớm hơn.' : 'Không quên thẻ nào. Trí nhớ của bạn đang lên level!'}
+        icon={due.length ? '🔔' : finished ? (tally.again ? '✅' : '🏆') : '☕'}
+        title={
+          due.length
+            ? `Có ${due.length} thẻ cần ôn`
+            : finished
+              ? extra
+                ? `Đã ôn thêm ${tally.done} lượt!`
+                : 'Hoàn thành lượt ôn tập!'
+              : 'Không có thẻ nào đến hạn'
+        }
+        text={
+          due.length
+            ? 'Ôn ngay lúc này là đúng thời điểm nhất để nhớ lâu.'
+            : more.length
+              ? 'Các thẻ khác chưa tới hạn. Muốn luyện tiếp thì “Ôn thêm” — chọn từ bạn hay quên nhất và không làm xáo trộn lịch ôn.'
+              : 'Bạn chưa có từ nào để ôn — học vài từ mới trước nhé.'
+        }
         stats={[
-          { value: tally.done, label: 'lượt ôn' },
-          { value: tally.again, label: 'lần “Quên”' },
+          ...(finished
+            ? [
+                { value: tally.done, label: 'lượt ôn' },
+                { value: tally.again, label: 'lần “Quên”' },
+              ]
+            : []),
+          ...(nextDue && !due.length ? [{ value: formatDue(nextDue, now), label: 'thẻ tiếp theo đến hạn' }] : []),
         ]}
-        celebrate={tally.again === 0}
+        celebrate={finished && !extra && tally.again === 0 && !due.length}
       >
-        <button className="btn primary" onClick={() => go('home')}>
-          <House size={16} /> Về Dashboard
-        </button>
-        <button className="btn" onClick={() => go('learn')}>
+        {due.length > 0 ? (
+          <button className="btn primary" onClick={() => start(due, false)}>
+            <Repeat size={16} /> Ôn tiếp {due.length} thẻ
+          </button>
+        ) : more.length > 0 ? (
+          <button className="btn primary" onClick={() => start(more, true)}>
+            <Dumbbell size={16} /> Ôn thêm {more.length} từ
+          </button>
+        ) : null}
+        <button className={`btn ${due.length || more.length ? '' : 'primary'}`} onClick={() => go('learn')}>
           <BookOpen size={16} /> Học từ mới
         </button>
+        {finished && (
+          <button className="btn ghost" onClick={() => go('home')}>
+            <House size={16} /> Dashboard
+          </button>
+        )}
       </Summary>
     )
   }
@@ -136,7 +192,7 @@ export function Review({ go }: { go: (r: Route) => void }) {
         <span className="muted mono small">
           {pos + 1}/{queue.length}
         </span>
-        <span className="pill">{mode === 'recall' ? 'Anh → Việt' : 'Việt → Anh'}</span>
+        <span className="pill">{extra ? 'Ôn thêm' : mode === 'recall' ? 'Anh → Việt' : 'Việt → Anh'}</span>
         <ExitButton onExit={() => go('home')} label="Dừng ôn tập" />
       </div>
 
@@ -192,22 +248,40 @@ export function Review({ go }: { go: (r: Route) => void }) {
       {flipped && (
         <>
           <WordCard word={word} />
-          <div className="dock">
-            <div className="field-label">Bạn nhớ từ này thế nào?</div>
-            <div className="grades">
-              {GRADES.map((g) => (
-                <button
-                  key={g.grade}
-                  className={`grade ${g.cls} ${g.grade === suggested ? 'suggested' : ''}`}
-                  onClick={() => grade(g.grade)}
-                >
-                  <b>{g.label}</b>
-                  <span className="small">ôn lại sau {formatInterval(nextInterval(card, g.grade))}</span>
-                  <Kbd>{g.grade + 1}</Kbd>
+          {extra ? (
+            <div className="dock">
+              <div className="field-label">Bạn còn nhớ từ này không?</div>
+              <div className="grades two">
+                <button className={`grade again ${verdict === 'wrong' ? 'suggested' : ''}`} onClick={() => gradeExtra(false)}>
+                  <b>Chưa nhớ</b>
+                  <span className="small">ôn lại sau 1 phút</span>
+                  <Kbd>1</Kbd>
                 </button>
-              ))}
+                <button className={`grade good ${verdict !== 'wrong' ? 'suggested' : ''}`} onClick={() => gradeExtra(true)}>
+                  <b>Nhớ rồi</b>
+                  <span className="small">giữ nguyên lịch ôn</span>
+                  <Kbd>2</Kbd>
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="dock">
+              <div className="field-label">Bạn nhớ từ này thế nào?</div>
+              <div className="grades">
+                {GRADES.map((g) => (
+                  <button
+                    key={g.grade}
+                    className={`grade ${g.cls} ${g.grade === suggested ? 'suggested' : ''}`}
+                    onClick={() => grade(g.grade)}
+                  >
+                    <b>{g.label}</b>
+                    <span className="small">ôn lại sau {formatInterval(nextInterval(card, g.grade))}</span>
+                    <Kbd>{g.grade + 1}</Kbd>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
